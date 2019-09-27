@@ -66,7 +66,65 @@ def genPythonFile(yaml_data, dist=""):
     data=replaceAllKeys(data, yaml_data, "in ProjectName.py")
     writeFile(data, outfname+".py", os.path.join(dist, "scripts"), 'utf_8_sig' )
 
-    #genCMakeLists(yaml_data, "src", dist)
+#
+# XXX.idl 
+def genIDLFile(yaml_data, dist=""):
+    if 'serviceport' in yaml_data and yaml_data['serviceport']:
+        service_data={}
+        for sdata in yaml_data['serviceport']:
+            if sdata['if_type_name']:
+                if_type_name = sdata['if_type_name'].split("::")
+                interface_name = if_type_name.pop()
+                module_name="::".join(if_type_name)
+
+                outfname="_".join(if_type_name)+".idl"
+                service_data.clear()
+                service_data['interface_name'] = interface_name
+                service_data['module_name'] = module_name
+                service_data['SERVICE_NAME'] = "_".join(if_type_name).upper()
+                if 'service_functions' in sdata:
+                    funcs = ""
+                    for x in sdata['service_functions']:
+                        funcs += "        "+x+";\n"
+                    service_data['service_function_idl'] = funcs
+                else:
+                    service_data['service_function_idl'] = ""
+
+                data=loadTemplate("Service_module.idl", "idl")
+                data=replaceAllKeys(data, service_data, "in Service_module.idl")
+                writeFile(data, outfname, os.path.join(dist, "idl"), 'utf_8_sig' )
+
+#
+# XXX.idl 
+def genServiceImplFile(yaml_data, dist=""):
+    if 'serviceport' in yaml_data and yaml_data['serviceport']:
+        service_data={}
+        for sdata in yaml_data['serviceport']:
+            if sdata['flow'] == 'provider' and sdata['if_type_name']:
+                if_type_name = sdata['if_type_name'].split("::")
+                interface_name = if_type_name.pop()
+                module_name="::".join(if_type_name)
+
+                outfname=sdata['impl']+".py"
+                service_data.clear()
+                service_data['interface_name'] = interface_name
+                service_data['service_name'] = module_name
+                service_data['service_impl'] = sdata['impl']
+                service_data['SERVICE_NAME'] = "_".join(if_type_name).upper()
+                if 'service_functions' in sdata:
+                    funcs = ""
+                    for x in sdata['service_functions']:
+                        funcs += "  def "+x.split(" ",1)[1]+"\n"
+                        funcs += "    try:\n"
+                        funcs += "      return\n"
+                        funcs += "    except AttributeError:\n      raise CORBA.NO_IMPLEMENT(0, CORBA.COMPLETED_NO)\n\n"
+                    service_data['service_function'] = funcs
+                else:
+                    service_data['service_function'] = ""
+
+                data=loadTemplate("Service_module.py", "scripts")
+                data=replaceAllKeys(data, service_data, "in Service_module.py")
+                writeFile(data, outfname, os.path.join(dist, "scripts"), 'utf_8_sig' )
 
 #
 #  Replace Keys (@xxx@)
@@ -119,6 +177,8 @@ def getActionsDefine(data):
 def genPythonFiles(data, yaml_file, dist=""):
     genCMakeLists(data, "", dist)
     genPythonFile(data, dist)
+    genIDLFile(data, dist)
+    genServiceImplFile(data, dist)
 
     target_idl_dir = os.path.join(dist, 'idl')
     target_scripts_dir = os.path.join(dist, 'scripts')

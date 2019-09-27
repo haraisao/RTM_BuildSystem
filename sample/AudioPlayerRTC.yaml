@@ -41,12 +41,17 @@ dataport :
     type : RTC::TimedOctetSeq
     description : AudioData
 
-service_modules : AudioPlay_idl_impl
+service_modules : AudioPlay_Player_i
 serviceport : 
   - name : player
     flow : provider
     if_name : AudioPlay_Player 
-    if_type_name : AudioPlay::Player 
+    if_type_name : AudioPlay::Player
+    service_functions:
+      - long play_file(in string fname)
+      - long pause()
+      - long stop()
+      - long get_files(out RTC::TimedStringSeq flist)
     impl : AudioPlay_Player_i
     description : Service port for Audio Play
     
