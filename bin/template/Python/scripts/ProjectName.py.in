@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# -*- Python -*-
+
+"""
+ @license the MIT License
+
+ Copyright(C) 2018 Isao Hara,AIST,JP
+ All rights reserved.
+
+"""
+from DataFlowRTC_Base import *
+
+##
+# @class ProjectName
+# 
+# 
+class @ProjectName@(DataFlowRTC_Base):
+  ##
+  # @brief constructor
+  # @param manager Maneger Object
+  # 
+  def __init__(self, manager):
+    DataFlowRTC_Base.__init__(self, manager)
+
+  ##
+  #
+  # The initialize action (on CREATED->ALIVE transition)
+  # formaer rtc_init_entry() 
+  # 
+  # @return RTC::ReturnCode_t
+  # 
+  #
+  def onInitialize(self):
+    DataFlowRTC_Base.onInitialize(self)
+    
+    return RTC.RTC_OK
+
+@action_define@
+  ##
+  # Callback method from RtcDataListenr
+  # 
+  def onData(self, name, data):
+    print(name,data)
+
+    return RTC.RTC_OK
+
+
+#########################################
+#  Initializers
+#
+
+def main():
+  mgr = rtc_init(@ProjectName@,  os.path.join(os.path.dirname(__file__), '@ProjectName@.yaml'))
+  mgr.runManager()
+
+if __name__ == "__main__":
+  main()
+

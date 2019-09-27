@@ -1,0 +1,58 @@
+name: AudioPlayRTC
+version: 1.0.0
+vendor : AIST
+category : Audio
+component_type : STATIC
+activity_type : PERIODIC
+kind: DataFlowComponent
+max_instance : 1
+language : Python
+lang_type : SCRIPT
+description : Simple Audio Player
+maintainer: Isao Hara
+author: Isao Hara(isao-hara@aist.go.jp)
+
+dataport : []
+
+service_modules : AudioPlay_idl_impl
+serviceport : 
+  - name : player
+    direction : provider
+    if_name : AudioPlay_Player 
+    if_type_name : AudioPlay::Player 
+    impl : AudioPlay_Player_i
+    description : Service port for Audio Play
+    
+configuration :
+  - name : audio_dir
+    default : sounds
+    __type__ : string
+    __widget__ : text
+    __description__ :  Directory for audio_player
+  - name : reverse
+    default : 0 
+    __type__ : int
+    __widget__ : radio
+    __constraints__ : (0,1)
+    __description__ :  Reverse flag
+  - name : loop
+    default : 0 
+    __type__ : int
+    __widget__ : radio
+    constraints : (0,1)
+    description :  Loop flag
+  - name : speed_rate
+    defaultValue : 1.0
+    type : float
+    widget : text
+    description : Speed rate to play audio
+  - name : start_time
+    defaultValue : 0.0
+    type : float
+    widget : text
+    description : Start time to play audio
+  - name : end_time
+    defaultValue : -1
+    type : float
+    widget : text
+    description : End time to play audio

@@ -1,0 +1,95 @@
+// -*- C++ -*-
+/*!
+ * @file  @ProjectName@.cpp
+ * @author @author@
+ *
+ * Copyright (C) 
+ *     All rights reserved.
+ *
+ */
+
+#include "@ProjectName@.h"
+
+// Module specification
+// <rtc-template block="module_spec">
+const char* rtcomponent_spec[] =
+  {
+    "implementation_id", "@ProjectName@",
+    "type_name",         "@ProjectName@",
+    "description",       "@description@",
+    "version",           "@version@",
+    "vendor",            "@vendor@",
+    "category",          "@category@",
+    "component_type",    "@component_type@",
+    "activity_type",     "@activity_type@",
+    "kind",              "@kind@",
+    "max_instance",      "@max_instance@",
+    "language",          "C++",
+    "lang_type",         "compile",
+    @configuration@
+    ""
+  };
+// </rtc-template>
+
+/*!
+ * @brief constructor
+ * @param manager Maneger Object
+ */
+@ProjectName@::@ProjectName@(RTC::Manager* manager)
+    // <rtc-template block="initializer">
+  : RTC::DataFlowComponentBase(manager)@dataport_construct_decl@
+
+    // </rtc-template>
+{
+}
+
+/*!
+ * @brief destructor
+ */
+@ProjectName@::~@ProjectName@()
+{
+}
+
+RTC::ReturnCode_t @ProjectName@::onInitialize()
+{
+  RTC_DEBUG(("onInitialize start"));
+  RTC_INFO(("@ProjectName@ : @description@"));
+
+  // Registration: InPort/OutPort/Service
+  // <rtc-template block="registration">
+  // Set DataPort buffers
+  @add_dataports@
+
+  // Set service provider to Ports
+
+  // Set service consumers to Ports
+
+  // Set CORBA Service Ports
+
+  // </rtc-template>
+  @bind_configuration@
+
+  RTC_DEBUG(("onInitialize finish"));
+  return RTC::RTC_OK;
+}
+
+@action_define@
+
+extern "C"
+{
+  void @ProjectName@Init(RTC::Manager* manager)
+  {
+    int i, j;
+
+    for (i = 0; strlen(rtcomponent_spec[i]) != 0; i++);
+    char** spec_intl = new char*[i + 1];
+    for (j = 0; j < i; j++) {
+      spec_intl[j] = (char *)rtcomponent_spec[j];
+    }
+    spec_intl[i] = (char *)"";
+    coil::Properties profile((const char **)spec_intl);
+    manager->registerFactory(profile,
+			     RTC::Create<@ProjectName@>,
+			     RTC::Delete<@ProjectName@>);
+  }
+};
