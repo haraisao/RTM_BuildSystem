@@ -7,6 +7,7 @@ import yaml
 import re
 import shutil
 import traceback
+import re
 
 template_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'template')
 
@@ -114,9 +115,30 @@ def genServiceImplFile(yaml_data, dist=""):
                 if 'service_functions' in sdata:
                     funcs = ""
                     for x in sdata['service_functions']:
-                        funcs += "  def "+x.split(" ",1)[1]+"\n"
+                        resval=""
+                        funcname = x.split(" ",1)
+                        if funcname[0] != "void":
+                            resval = "res"
+                        val=re.match(r"([\w]+)\(([:,\s\w]*)\)", funcname[1])
+                        args = val[2]
+                        if args:
+                            args_ar = args.split(',')
+                            argv=[]
+                            for x in args_ar:
+                                v=x.split(" ")
+                                if v[0] == "in":
+                                    argv.append(v[-1])
+                                elif v[0] == "out":
+                                    resval += ","+v[-1]
+                            if argv :
+                                args = ", ".join(argv)
+                                funcs += "  def "+val[1]+"(self, "+args+"):\n"
+                            else:
+                                funcs += "  def "+val[1]+"(self):\n"
+                        else:
+                            funcs += "  def "+val[1]+"(self):\n"
                         funcs += "    try:\n"
-                        funcs += "      return\n"
+                        funcs += "      return "+resval+"\n"
                         funcs += "    except AttributeError:\n      raise CORBA.NO_IMPLEMENT(0, CORBA.COMPLETED_NO)\n\n"
                     service_data['service_function'] = funcs
                 else:

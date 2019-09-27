@@ -48,7 +48,7 @@ serviceport :
     if_name : AudioPlay_Player 
     if_type_name : AudioPlay::Player
     service_functions:
-      - long play_file(in string fname)
+      - long play_file(in string fname, in int x)
       - long pause()
       - long stop()
       - long get_files(out RTC::TimedStringSeq flist)
