@@ -1,4 +1,5 @@
 name: AudioPlayRTC
+type_name: AudioPlayRTC
 version: 1.0.0
 vendor : AIST
 category : Audio
@@ -12,12 +13,38 @@ description : Simple Audio Player
 maintainer: Isao Hara
 author: Isao Hara(isao-hara@aist.go.jp)
 
-dataport : []
+
+actions:
+  - OnInitialize: true
+  - OnFinalize: true
+  - OnStartup: false
+  - OnShutdown: false
+  - OnActivated: true
+  - OnDeactivated: true
+  - OnAborting: false
+  - OnError: false
+  - OnReset: false
+  - OnExecute: true
+  - OnStateUpdate: false
+  - OnRateChanged: false
+  - OnAction: false
+  - OnModeChanged: false
+
+dataport :
+  - name : Command
+    flow : in
+    type : RTC::TimedString
+    description : Command
+    datalistener: CommandCallback
+  - name : AudioData
+    flow : out
+    type : RTC::TimedOctetSeq
+    description : AudioData
 
 service_modules : AudioPlay_idl_impl
 serviceport : 
   - name : player
-    direction : provider
+    flow : provider
     if_name : AudioPlay_Player 
     if_type_name : AudioPlay::Player 
     impl : AudioPlay_Player_i
@@ -39,20 +66,20 @@ configuration :
     default : 0 
     __type__ : int
     __widget__ : radio
-    constraints : (0,1)
-    description :  Loop flag
+    __constraints__ : (0,1)
+    __description__ :  Loop flag
   - name : speed_rate
-    defaultValue : 1.0
-    type : float
-    widget : text
-    description : Speed rate to play audio
+    default : 1.0
+    __type__ : float
+    __widget__ : text
+    __description__ : Speed rate to play audio
   - name : start_time
-    defaultValue : 0.0
-    type : float
-    widget : text
-    description : Start time to play audio
+    default : 0.0
+    __type__ : float
+    __widget__ : text
+    __description__ : Start time to play audio
   - name : end_time
-    defaultValue : -1
-    type : float
-    widget : text
-    description : End time to play audio
+    default : -1
+    __type__ : float
+    __widget__ : text
+    __description__ : End time to play audio

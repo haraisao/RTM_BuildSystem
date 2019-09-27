@@ -272,7 +272,8 @@ def rtc_profile(profile):
   res=""
 
   res += "<table>"
-  keys=['instance_name', 'description', 'version', 'vendor', 'category', 'activity_type', 'max_instance', 
+  keys=['name', 'instance_name','type_name','description', 'version', 'vendor', 'category', 'activity_type', 'kind', 
+    'component_type','max_instance', 
     'language', 'lang_type', 'exec_cxt.periodic.type','exec_cxt.periodic.rate',
     'openrtm.name', 'openrtm.version', 'os.name', 'corba.id']
   for k in keys:
