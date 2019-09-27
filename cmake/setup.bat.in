@@ -1,0 +1,23 @@
+@rem ===setup.bat 
+@set RTM_VC_VERSION=@RTM_VC_VER@
+@set RTM_ROOT=@OPENRTM_DIR@
+
+@rem ---CMake
+@set CMAKE_BIN_PATH=%~d0\local\cmake-3.14.5-win64-x64\bin
+@set CMAKE_PREFIX_PATH=%~d0/local
+
+@rem -- omniORB
+@set OMNIORB_DIR=@OMNIORB_DIR@
+@set OMNIORB_LIB_PATH=%OMNIORB_DIR%\lib\x86_win32
+@set OMNIORB_BIN_PATH=%OMNIORB_DIR%\bin\x86_win32;%OMNIORB_LIB_PATH%
+ 
+@rem --Python Bin
+@set PYTHON_DIR=%~d0\local\Python37
+@set PYTHON_BIN_PATH=%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%PYTHON_DIR%\DLLs
+@set PYTHONPATH=%OMNIORB_ROOT%\lib\python;%PYTHON_DIR%\Lib;%PYTHONPATH%
+@set PYTHON_EXE=%PYTHON_DIR%\python.exe
+ 
+@if not defined PATH_ORG @( 
+    @set "PATH_ORG=%PATH%"
+    @set "PATH=%~dp0;%RTM_ROOT%\bin\%RTM_VC_VERSION%;%RTM_ROOT%\bin;%OMNIORB_BIN_PATH%;%PYTHON_BIN_PATH%;%CMAKE_BIN_PATH%;%PATH%"
+) 
