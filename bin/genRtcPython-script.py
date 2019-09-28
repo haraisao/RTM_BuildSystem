@@ -230,8 +230,7 @@ def getActionsDefine(data):
     val = "\n"
     project_name=data['ProjectName']
 
- 
-    if 'actions' in data:
+    if ('actions' in data) and data['actions']:
         for x in data['actions']:
             for xx in x.keys():
                 if xx=='OnInitialize':
@@ -251,7 +250,7 @@ def getActionsDefine(data):
                         val += "  #####\n  #   on%s\n" % (xx[2:])
                         val += "  #\n  #def on%s(self, ec_id):\n  #\n  #  return RTC.RTC_OK\n\n" % (xx[2:])
 
-    if 'dataport' in data:
+    if ('dataport' in data) and data['dataport']:
         for port in data['dataport']:
             if 'datalistener' in port:
                 val += "  #####\n  #   onData\n  #\n"
