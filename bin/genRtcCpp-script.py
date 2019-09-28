@@ -7,6 +7,8 @@ import yaml
 import re
 import shutil
 import traceback
+import time
+import difflib
 
 template_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'template')
 
@@ -49,13 +51,51 @@ def writeFile(data, fname, dirname="", enc='utf-8'):
     except:
         print("Fail to output to ", fname)
     return
+#
+#
+def file_diff(file1, text2):
+    try:
+        with open(file1) as f1:
+            text1=f1.read()
+        return  difflib.context_diff(text1.splitlines(keepends=True), text2.splitlines(keepends=True),
+                        fromfile=os.path.basename(file1), tofile="new_"+os.path.basename(file1))
+    except:
+        return None
+
+#
+#
+def rename_old_file(dirname, fname, data):
+    full_fname=os.path.join(dirname, fname)
+    diff = file_diff(full_fname, data)
+
+    if diff :
+        diff_txt = ''.join(diff)
+        if diff_txt:
+            tm=time.localtime()
+            #backup_fname="%s.%d%03d%02d%02d" % (fname, tm.tm_year-2000, tm.tm_yday, tm.tm_hour, tm.tm_min)
+            #print("==== copy %s to %s" % (full_fname,  backup_fname))
+            #shutil.copy(full_fname, os.path.join(dirname, backup_fname))
+            diff_fname="%s.%d%03d%02d%02d.diff" % (fname, tm.tm_year-2000, tm.tm_yday, tm.tm_hour, tm.tm_min)
+            try:
+                with open(os.path.join(dirname, diff_fname), "w", encoding='utf-8') as fw:
+                    fw.write(diff_txt)
+                print("==== save the diff to %s" % (diff_fname))
+            except:
+                print("==== Fail to save the diff to %s" % (os.path.join(dirname, diff_fname)))
+
+            return True
+        else:
+            #print("==== %s is same, skip to generate" % fname)
+            return False
+    return True
 
 #
 #  CMakeLists.txt
 def genCMakeLists(yaml_data, dirname="", dist=""):
     data=loadTemplate("CMakeLists.txt", dirname)
     data=replaceAllKeys(data, yaml_data, "in CMakeLists.txt("+dirname+")")
-    writeFile(data, "CMakeLists.txt", os.path.join(dist, dirname))
+    if rename_old_file(os.path.join(dist, dirname), "CMakeLists.txt" , data):
+        writeFile(data, "CMakeLists.txt", os.path.join(dist, dirname))
 
 #
 # XXX.cpp and XXXComp.cpp
@@ -64,11 +104,13 @@ def genCppFile(yaml_data, dist=""):
 
     data=loadTemplate("ProjectName.cpp", "src")
     data=replaceAllKeys(data, yaml_data, "in ProjectName.cpp")
-    writeFile(data, outfname+".cpp", os.path.join(dist, "src"), 'utf_8_sig' )
+    if rename_old_file(os.path.join(dist, "src"), outfname+".cpp" , data): 
+        writeFile(data, outfname+".cpp", os.path.join(dist, "src"), 'utf_8_sig' )
 
     data2=loadTemplate("ProjectNameComp.cpp", "src")
     data2=replaceAllKeys(data2, yaml_data, "in ProjectNameComp.cpp")
-    writeFile(data2, outfname+"Comp.cpp", os.path.join(dist, "src"), 'utf_8_sig')
+    if rename_old_file(os.path.join(dist, "src"), outfname+"Comp.cpp" , data2): 
+        writeFile(data2, outfname+"Comp.cpp", os.path.join(dist, "src"), 'utf_8_sig')
 
     #genCMakeLists(yaml_data, "src", dist)
 
@@ -78,9 +120,117 @@ def genHeaderFile(yaml_data, dist=""):
     data=loadTemplate("ProjectName.h", "include")
     data=replaceAllKeys(data, yaml_data, "in ProjectName.h")
     outfname=yaml_data['ProjectName']
-    writeFile(data, outfname+".h", os.path.join(dist, "include"), 'utf_8_sig')
+    if rename_old_file(os.path.join(dist, "include"), outfname+".h" , data): 
+        writeFile(data, outfname+".h", os.path.join(dist, "include"), 'utf_8_sig')
 
     #genCMakeLists(yaml_data, "include", dist)
+
+#
+# XXX.idl 
+def genIDLFile(yaml_data, dist=""):
+    if 'serviceport' in yaml_data and yaml_data['serviceport']:
+        service_data={}
+        for sdata in yaml_data['serviceport']:
+            if 'module_name' in sdata :
+                module_name=sdata['module_name']
+                interface_name = sdata['name']
+                outfname="%s_%s.idl" % (module_name, interface_name)
+                service_data.clear()
+                service_data['interface_name'] = interface_name
+                service_data['module_name'] = module_name
+                service_data['SERVICE_NAME'] = "%s_%s" % (module_name.upper(), interface_name.upper())
+                if 'decls' in sdata:
+                    decls=""
+                    for x in sdata['decls']:
+                        decls += "  %s;\n" % x
+                    service_data['decls'] = decls
+                else:
+                    service_data['decls'] = ""
+
+                if 'operations' in sdata:
+                    funcs = ""
+                    for x in sdata['operations']:
+                        funcs += "    "+x+";\n"
+                    service_data['service_function_idl'] = funcs
+                else:
+                    service_data['service_function_idl'] = ""
+                
+                service_data['description'] = sdata['description']
+
+                data=loadTemplate("Service_module.idl", "idl")
+                data=replaceAllKeys(data, service_data, "in Service_module.idl")
+
+                if rename_old_file(os.path.join(dist, "idl"), outfname , data):
+                    writeFile(data, outfname, os.path.join(dist, "idl") )
+
+
+
+#
+# XXX_impl.py 
+def genServiceImplFile(yaml_data, dist=""):
+    if 'serviceport' in yaml_data and yaml_data['serviceport']:
+        service_data={}
+        for sdata in yaml_data['serviceport']:
+            if sdata['flow'] == 'provider':
+                if 'module_name' in sdata:
+                    module_name=sdata['module_name']
+                interface_name = sdata['name']
+                outfname=sdata['impl']+".py"
+                service_data.clear()
+                service_data['interface_name'] = interface_name
+                service_data['service_name'] = module_name
+                service_data['service_impl'] = sdata['impl']
+                if 'operations' in sdata:
+                    funcs = ""
+                    for op in sdata['operations']:
+                        resval=""
+                        funcname = op.split(" ",1)
+                        if funcname[0] != "void":
+                            resval = "res"
+                        val=re.match(r"([\w]+)\(([:,\s\w]*)\)", funcname[1])
+                        args = val[2]
+                        if args:
+                            args_ar = args.split(',')
+                            argv=[]
+                            for x in args_ar:
+                                v=x.split(" ")
+                                if v[0] == "in":
+                                    argv.append(v[-1])
+                                elif v[0] == "out":
+                                    if resval:
+                                        resval += ","+v[-1]
+                                    else:
+                                        resval += v[-1]
+                            if argv :
+                                args = ", ".join(argv)
+                                funcs += "  #\n  # %s\n" % op
+                                funcs += "  def "+val[1]+"(self, "+args+"):\n"
+                            else:
+                                funcs += "  #\n  # %s\n" % op
+                                funcs += "  def "+val[1]+"(self):\n"
+                        else:
+                            funcs += "  #\n  # %s\n" % op
+                            funcs += "  def "+val[1]+"(self):\n"
+                        funcs += "    try:\n"
+                        funcs += "      return "+resval+"\n"
+                        funcs += "    except AttributeError:\n      raise CORBA.NO_IMPLEMENT(0, CORBA.COMPLETED_NO)\n\n"
+                    service_data['service_function'] = funcs
+                else:
+                    service_data['service_function'] = ""
+
+                #
+                #
+                data_h=loadTemplate("ServiceName_impl.h", "include")
+                data_h=replaceAllKeys(data_h, service_data, "in Service_module.h")
+                if rename_old_file(os.path.join(dist, "include"), outfname+".h" , data_h):
+                    writeFile(data, outfname+".h", os.path.join(dist, "include") )
+                #
+                data_cpp=loadTemplate("ServiceName_impl.h", "src")
+                data_cpp=replaceAllKeys(data_cpp, service_data, "in Service_module.cpp")
+                if rename_old_file(os.path.join(dist, "src"), outfname+".cpp" , data_cpp):
+                    writeFile(data_cpp, outfname+".cpp", os.path.join(dist, "src") )
+                #
+
 
 #
 #  Replace Keys (@xxx@)
@@ -298,7 +448,9 @@ def genCppFiles(data, dist=""):
     genCMakeLists(data, "", dist)
     genCppFile(data, dist)
     genHeaderFile(data, dist)
-
+    genIDLFile(data, dist)
+    genServiceImplFile(data, dist)
+    
     target_idl_dir = os.path.join(dist, 'idl')
     try:
         os.mkdir(target_idl_dir)

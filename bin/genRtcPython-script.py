@@ -147,7 +147,7 @@ def genIDLFile(yaml_data, dist=""):
                     writeFile(data, outfname, os.path.join(dist, "idl") )
 
 #
-# XXX.idl 
+# XXX_impl.py 
 def genServiceImplFile(yaml_data, dist=""):
     if 'serviceport' in yaml_data and yaml_data['serviceport']:
         service_data={}
