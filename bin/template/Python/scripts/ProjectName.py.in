@@ -37,13 +37,6 @@ class @ProjectName@(DataFlowRTC_Base):
     return RTC.RTC_OK
 
 @action_define@
-  ##
-  # Callback method from RtcDataListenr
-  # 
-  def onData(self, name, data):
-    print(name,data)
-
-    return RTC.RTC_OK
 
 
 #########################################

@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # -*- Python -*-
 
@@ -10,12 +10,6 @@
 
 """
 from DataFlowRTC_Base import *
-
-def DataIn(name, data):
-  print("----", data)
-  return
-
-setFunction(DataIn)
 
 ##
 # @class ProjectName
@@ -103,28 +97,6 @@ class ConsoleIn(DataFlowRTC_Base):
   #   onExecute
   #
   def onExecute(self, ec_id):
-    try:
-      if self._inIn.isNew():
-        data = self._inIn.read()
-        print("Received: ", data)
-        print("Received: ", data.data)
-        print("TimeStamp: ", data.tm.sec, "[s] ", data.tm.nsec, "[ns]")
-    except:
-      traceback.print_exc()
-
-    try:
-      data = input_with_timeout("Please input: ", 10)
-      self._d_out.data = int(data)
-      OpenRTM_aist.setTimestamp(self._d_out)
-      print("Sending to subscriber: ", self._d_out.data)
-      self._outOut.write()
-    except TimeoutExpired:
-      pass
-    except InputTerminated:
-      self.deactivate(ec_id)
-      print("...Deactivate")
-    except:
-      traceback.print_exc()
 
     return RTC.RTC_OK
 
@@ -156,14 +128,15 @@ class ConsoleIn(DataFlowRTC_Base):
   #
   #  return RTC.RTC_OK
 
-
-  ##
-  # Callback method from RtcDataListenr
-  # 
+  #####
+  #   onData
+  #
   def onData(self, name, data):
-    print("\n====>", name,data)
+    print(name, data)
 
     return RTC.RTC_OK
+
+
 
 
 #########################################

@@ -38,24 +38,24 @@ RewriteBuildOptions()
 
 #
 #
-set(rtc_headers
-  include/ConsoleIn.h
-)
+#set(rtc_headers
+#  include/ConsoleIn.h
+#)
 
-set(rtc_srcs
-    src/ConsoleIn.cpp
-)
-
-set(rtc_exec_src src/ConsoleInComp.cpp)
-
-include_directories(
-  ${PROJECT_SOURCE_DIR}/include
-  ${PROJECT_BINARY_DIR}
-  ${OPENRTM_INCLUDE_DIRS}
-)
-
-add_definitions(${OPENRTM_CFLAGS})
-link_directories(${OPENRTM_LIBRARY_DIRS})
+#set(rtc_srcs
+#    src/ConsoleIn.cpp
+#)
+#
+#set(rtc_exec_src src/ConsoleInComp.cpp)
+#
+#include_directories(
+#  ${PROJECT_SOURCE_DIR}/include
+#  ${PROJECT_BINARY_DIR}
+#  ${OPENRTM_INCLUDE_DIRS}
+#)
+#
+#add_definitions(${OPENRTM_CFLAGS})
+#link_directories(${OPENRTM_LIBRARY_DIRS})
 
 #############
 #  3rdPary Libs
@@ -66,17 +66,17 @@ set(OPTION_LIBRARIES)
 
 #############
 #  RTC
-set(RTC_SOURCES ${rtc_srcs} ${rtc_headers} ${ALL_IDL_SRCS})
-set(RTC_EXEC_SOURCES  ${rtc_exec_src} ${RTC_SOURCES})
+#set(RTC_SOURCES ${rtc_srcs} ${rtc_headers} ${ALL_IDL_SRCS})
+#set(RTC_EXEC_SOURCES  ${rtc_exec_src} ${RTC_SOURCES})
 #ste(UTF_8 True)
 
 #
 #  Dynamic local library
-add_rtc_library(${PROJECT_NAME} ${RTC_SOURCES})
+#add_rtc_library(${PROJECT_NAME} ${RTC_SOURCES})
 
 #
 # Standalone executable
-add_rtc_executable(${PROJECT_NAME}Comp ${RTC_EXEC_SOURCES})
+#add_rtc_executable(${PROJECT_NAME}Comp ${RTC_EXEC_SOURCES})
 
 #############
 # Install
@@ -89,7 +89,7 @@ install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}Comp
 #    ARCHIVE DESTINATION lib COMPONENT componenet
   )
 
-gen_setup_bat()
+#gen_setup_bat()
 #install(FILES ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/setup.bat DESTINATION bin)
 
 #

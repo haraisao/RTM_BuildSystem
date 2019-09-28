@@ -58,10 +58,12 @@ def file_diff(file1, text2):
     try:
         with open(file1) as f1:
             text1=f1.read()
-        return  difflib.context_diff(text1.splitlines(keepends=True), text2.splitlines(keepends=True))
+        return  difflib.context_diff(text1.splitlines(keepends=True), text2.splitlines(keepends=True),
+                        fromfile=os.path.basename(file1), tofile="new_"+os.path.basename(file1))
     except:
         return None
-
+#
+#
 def rename_old_file(dirname, fname, data):
     full_fname=os.path.join(dirname, fname)
     diff = file_diff(full_fname, data)
@@ -70,13 +72,22 @@ def rename_old_file(dirname, fname, data):
         diff_txt = ''.join(diff)
         if diff_txt:
             tm=time.localtime()
-            backup_fname="%s.%d%03d%02d%02d" % (fname, tm.tm_year-2000, tm.tm_yday, tm.tm_hour, tm.tm_min)
-            print("==== copy %s to %s" % (full_fname,  backup_fname))
-            shutil.copy(full_fname, os.path.join(dirname, backup_fname))
+            #backup_fname="%s.%d%03d%02d%02d" % (fname, tm.tm_year-2000, tm.tm_yday, tm.tm_hour, tm.tm_min)
+            #print("==== copy %s to %s" % (full_fname,  backup_fname))
+            #shutil.copy(full_fname, os.path.join(dirname, backup_fname))
+            diff_fname="%s.%d%03d%02d%02d.diff" % (fname, tm.tm_year-2000, tm.tm_yday, tm.tm_hour, tm.tm_min)
+            try:
+                with open(os.path.join(dirname, diff_fname), "w", encoding='utf-8') as fw:
+                    fw.write(diff_txt)
+                print("==== save the diff to %s" % (diff_fname))
+            except:
+                print("==== Fail to save the diff to %s" % (os.path.join(dirname, diff_fname)))
+
             return True
         else:
             #print("==== %s is same, skip to generate" % fname)
             return False
+    return True
 #
 #  CMakeLists.txt
 def genCMakeLists(yaml_data, dirname="", dist=""):
@@ -106,17 +117,10 @@ def genIDLFile(yaml_data, dist=""):
             if 'module_name' in sdata :
                 module_name=sdata['module_name']
                 interface_name = sdata['name']
-            #if sdata['if_type_name']:
-            #    if_type_name = sdata['if_type_name'].split("::")
-            #    interface_name = if_type_name.pop()
-            #    module_name="::".join(if_type_name)
-            #
-            #    outfname="_".join(if_type_name)+".idl"
                 outfname="%s_%s.idl" % (module_name, interface_name)
                 service_data.clear()
                 service_data['interface_name'] = interface_name
                 service_data['module_name'] = module_name
-                #service_data['SERVICE_NAME'] = "_".join(if_type_name).upper()
                 service_data['SERVICE_NAME'] = "%s_%s" % (module_name.upper(), interface_name.upper())
                 if 'decls' in sdata:
                     decls=""
@@ -152,16 +156,11 @@ def genServiceImplFile(yaml_data, dist=""):
                 if 'module_name' in sdata:
                     module_name=sdata['module_name']
                 interface_name = sdata['name']
-                #if_type_name = sdata['if_type_name'].split("::")
-                #interface_name = if_type_name.pop()
-                #module_name="::".join(if_type_name)
-
                 outfname=sdata['impl']+".py"
                 service_data.clear()
                 service_data['interface_name'] = interface_name
                 service_data['service_name'] = module_name
                 service_data['service_impl'] = sdata['impl']
-                #service_data['SERVICE_NAME'] = "_".join(if_type_name).upper()
                 if 'operations' in sdata:
                     funcs = ""
                     for op in sdata['operations']:
@@ -230,6 +229,8 @@ def getReplaceStrs(data):
 def getActionsDefine(data):
     val = "\n"
     project_name=data['ProjectName']
+
+ 
     if 'actions' in data:
         for x in data['actions']:
             for xx in x.keys():
@@ -249,6 +250,14 @@ def getActionsDefine(data):
                     else:
                         val += "  #####\n  #   on%s\n" % (xx[2:])
                         val += "  #\n  #def on%s(self, ec_id):\n  #\n  #  return RTC.RTC_OK\n\n" % (xx[2:])
+
+    if 'dataport' in data:
+        for port in data['dataport']:
+            if 'datalistener' in port:
+                val += "  #####\n  #   onData\n  #\n"
+                val += "  def onData(self, name, data):\n    print(name, data)\n\n"
+                val += "    return RTC.RTC_OK\n\n"
+                break
     return val
 
 #
