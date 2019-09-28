@@ -7,7 +7,8 @@ import yaml
 import re
 import shutil
 import traceback
-import re
+import time
+import difflib
 
 template_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'template')
 
@@ -52,20 +53,49 @@ def writeFile(data, fname, dirname="", enc='utf-8'):
     return
 
 #
+#
+def file_diff(file1, text2):
+    try:
+        with open(file1) as f1:
+            text1=f1.read()
+        return  difflib.context_diff(text1.splitlines(keepends=True), text2.splitlines(keepends=True))
+    except:
+        return None
+
+def rename_old_file(dirname, fname, data):
+    full_fname=os.path.join(dirname, fname)
+    diff = file_diff(full_fname, data)
+
+    if diff :
+        diff_txt = ''.join(diff)
+        if diff_txt:
+            tm=time.localtime()
+            backup_fname="%s.%d%03d%02d%02d" % (fname, tm.tm_year-2000, tm.tm_yday, tm.tm_hour, tm.tm_min)
+            print("==== copy %s to %s" % (full_fname,  backup_fname))
+            shutil.copy(full_fname, os.path.join(dirname, backup_fname))
+            return True
+        else:
+            #print("==== %s is same, skip to generate" % fname)
+            return False
+#
 #  CMakeLists.txt
 def genCMakeLists(yaml_data, dirname="", dist=""):
     data=loadTemplate("CMakeLists.txt", dirname)
     data=replaceAllKeys(data, yaml_data, "in CMakeLists.txt("+dirname+")")
-    writeFile(data, "CMakeLists.txt", os.path.join(dist, dirname))
+
+    if rename_old_file(os.path.join(dist, dirname), "CMakeLists.txt" , data):
+        writeFile(data, "CMakeLists.txt", os.path.join(dist, dirname))
 
 #
 # XXX.py 
 def genPythonFile(yaml_data, dist=""):
-    outfname=yaml_data['ProjectName']
+    outfname=yaml_data['ProjectName']+".py"
 
     data=loadTemplate("ProjectName.py", "scripts")
     data=replaceAllKeys(data, yaml_data, "in ProjectName.py")
-    writeFile(data, outfname+".py", os.path.join(dist, "scripts") )
+
+    if rename_old_file(os.path.join(dist, "scripts"), outfname , data): 
+        writeFile(data, outfname, os.path.join(dist, "scripts") )
 
 #
 # XXX.idl 
@@ -108,7 +138,9 @@ def genIDLFile(yaml_data, dist=""):
 
                 data=loadTemplate("Service_module.idl", "idl")
                 data=replaceAllKeys(data, service_data, "in Service_module.idl")
-                writeFile(data, outfname, os.path.join(dist, "idl") )
+
+                if rename_old_file(os.path.join(dist, "idl"), outfname , data):
+                    writeFile(data, outfname, os.path.join(dist, "idl") )
 
 #
 # XXX.idl 
@@ -170,7 +202,8 @@ def genServiceImplFile(yaml_data, dist=""):
 
                 data=loadTemplate("Service_module.py", "scripts")
                 data=replaceAllKeys(data, service_data, "in Service_module.py")
-                writeFile(data, outfname, os.path.join(dist, "scripts") )
+                if rename_old_file(os.path.join(dist, "scripts"), outfname , data):
+                    writeFile(data, outfname, os.path.join(dist, "scripts") )
 
 #
 #  Replace Keys (@xxx@)
