@@ -9,7 +9,7 @@ import os
 import sys
 import time
 sys.path.append(".")
-sys.path.append("rtm")
+sys.path.append("scripts/rtm")
 
 import yaml
 from collections import OrderedDict
@@ -147,12 +147,16 @@ class DataFlowRTC_Base(OpenRTM_aist.DataFlowComponentBase):
       if self._services[k]['flow'] == 'provider':
         self.__dict__['_'+k+'Port'] = OpenRTM_aist.CorbaPort(k)
         self.__dict__['_'+k+'_service'] = eval(self._services[k]['impl'],globals())()
+
       elif self._services[k]['flow'] == 'consumer':
         self.__dict__['_'+k+'Port'] = OpenRTM_aist.CorbaPort(k)
         if 'if_type' in self._services[k]:
           if_type = self._services[k]['if_type']
         else:
           if_type="%s.%s" % (self._services[k]['module_name'], k)
+        if not self._services[k]['module_name'] in globals():
+          import_str="import %s" % self._services[k]['module_name']
+          exec(import_str,globals())
         #self.__dict__['_'+k+'_service'] = OpenRTM_aist.CorbaConsumer(interfaceType=self._services[k]['if_type'])
         self.__dict__['_'+k+'_service'] = OpenRTM_aist.CorbaConsumer(interfaceType=eval(if_type, globals()))
 
