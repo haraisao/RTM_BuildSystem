@@ -65,7 +65,7 @@ def genPythonFile(yaml_data, dist=""):
 
     data=loadTemplate("ProjectName.py", "scripts")
     data=replaceAllKeys(data, yaml_data, "in ProjectName.py")
-    writeFile(data, outfname+".py", os.path.join(dist, "scripts"), 'utf_8_sig' )
+    writeFile(data, outfname+".py", os.path.join(dist, "scripts") )
 
 #
 # XXX.idl 
@@ -73,27 +73,42 @@ def genIDLFile(yaml_data, dist=""):
     if 'serviceport' in yaml_data and yaml_data['serviceport']:
         service_data={}
         for sdata in yaml_data['serviceport']:
-            if sdata['if_type_name']:
-                if_type_name = sdata['if_type_name'].split("::")
-                interface_name = if_type_name.pop()
-                module_name="::".join(if_type_name)
-
-                outfname="_".join(if_type_name)+".idl"
+            if 'module_name' in sdata :
+                module_name=sdata['module_name']
+                interface_name = sdata['name']
+            #if sdata['if_type_name']:
+            #    if_type_name = sdata['if_type_name'].split("::")
+            #    interface_name = if_type_name.pop()
+            #    module_name="::".join(if_type_name)
+            #
+            #    outfname="_".join(if_type_name)+".idl"
+                outfname="%s_%s.idl" % (module_name, interface_name)
                 service_data.clear()
                 service_data['interface_name'] = interface_name
                 service_data['module_name'] = module_name
-                service_data['SERVICE_NAME'] = "_".join(if_type_name).upper()
-                if 'service_functions' in sdata:
+                #service_data['SERVICE_NAME'] = "_".join(if_type_name).upper()
+                service_data['SERVICE_NAME'] = "%s_%s" % (module_name.upper(), interface_name.upper())
+                if 'decls' in sdata:
+                    decls=""
+                    for x in sdata['decls']:
+                        decls += "  %s;\n" % x
+                    service_data['decls'] = decls
+                else:
+                    service_data['decls'] = ""
+
+                if 'operations' in sdata:
                     funcs = ""
-                    for x in sdata['service_functions']:
-                        funcs += "        "+x+";\n"
+                    for x in sdata['operations']:
+                        funcs += "    "+x+";\n"
                     service_data['service_function_idl'] = funcs
                 else:
                     service_data['service_function_idl'] = ""
+                
+                service_data['description'] = sdata['description']
 
                 data=loadTemplate("Service_module.idl", "idl")
                 data=replaceAllKeys(data, service_data, "in Service_module.idl")
-                writeFile(data, outfname, os.path.join(dist, "idl"), 'utf_8_sig' )
+                writeFile(data, outfname, os.path.join(dist, "idl") )
 
 #
 # XXX.idl 
@@ -101,22 +116,25 @@ def genServiceImplFile(yaml_data, dist=""):
     if 'serviceport' in yaml_data and yaml_data['serviceport']:
         service_data={}
         for sdata in yaml_data['serviceport']:
-            if sdata['flow'] == 'provider' and sdata['if_type_name']:
-                if_type_name = sdata['if_type_name'].split("::")
-                interface_name = if_type_name.pop()
-                module_name="::".join(if_type_name)
+            if sdata['flow'] == 'provider':
+                if 'module_name' in sdata:
+                    module_name=sdata['module_name']
+                interface_name = sdata['name']
+                #if_type_name = sdata['if_type_name'].split("::")
+                #interface_name = if_type_name.pop()
+                #module_name="::".join(if_type_name)
 
                 outfname=sdata['impl']+".py"
                 service_data.clear()
                 service_data['interface_name'] = interface_name
                 service_data['service_name'] = module_name
                 service_data['service_impl'] = sdata['impl']
-                service_data['SERVICE_NAME'] = "_".join(if_type_name).upper()
-                if 'service_functions' in sdata:
+                #service_data['SERVICE_NAME'] = "_".join(if_type_name).upper()
+                if 'operations' in sdata:
                     funcs = ""
-                    for x in sdata['service_functions']:
+                    for op in sdata['operations']:
                         resval=""
-                        funcname = x.split(" ",1)
+                        funcname = op.split(" ",1)
                         if funcname[0] != "void":
                             resval = "res"
                         val=re.match(r"([\w]+)\(([:,\s\w]*)\)", funcname[1])
@@ -129,13 +147,19 @@ def genServiceImplFile(yaml_data, dist=""):
                                 if v[0] == "in":
                                     argv.append(v[-1])
                                 elif v[0] == "out":
-                                    resval += ","+v[-1]
+                                    if resval:
+                                        resval += ","+v[-1]
+                                    else:
+                                        resval += v[-1]
                             if argv :
                                 args = ", ".join(argv)
+                                funcs += "  #\n  # %s\n" % op
                                 funcs += "  def "+val[1]+"(self, "+args+"):\n"
                             else:
+                                funcs += "  #\n  # %s\n" % op
                                 funcs += "  def "+val[1]+"(self):\n"
                         else:
+                            funcs += "  #\n  # %s\n" % op
                             funcs += "  def "+val[1]+"(self):\n"
                         funcs += "    try:\n"
                         funcs += "      return "+resval+"\n"
@@ -146,7 +170,7 @@ def genServiceImplFile(yaml_data, dist=""):
 
                 data=loadTemplate("Service_module.py", "scripts")
                 data=replaceAllKeys(data, service_data, "in Service_module.py")
-                writeFile(data, outfname, os.path.join(dist, "scripts"), 'utf_8_sig' )
+                writeFile(data, outfname, os.path.join(dist, "scripts") )
 
 #
 #  Replace Keys (@xxx@)
@@ -210,7 +234,7 @@ def genPythonFiles(data, yaml_file, dist=""):
     except:
         pass
     templ_scripts_dir = os.path.join(template_dir, "Python", "scripts")
-    #shutil.copy(os.path.join(templ_scripts_dir, "DataFlowRTC_Base.py"), target_scripts_dir)
+    shutil.copy(os.path.join(templ_scripts_dir, "DataFlowRTC_Base.py"), target_scripts_dir)
     shutil.copy(yaml_file, os.path.join(target_scripts_dir, project_name+".yaml"))
     shutil.copy(os.path.join(template_dir, "Python", "idlcompile.bat"), dist)
     shutil.copy(os.path.join(template_dir, "Python", "rtc.conf"), dist)

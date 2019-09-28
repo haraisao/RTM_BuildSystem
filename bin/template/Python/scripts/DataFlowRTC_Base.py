@@ -149,7 +149,13 @@ class DataFlowRTC_Base(OpenRTM_aist.DataFlowComponentBase):
         self.__dict__['_'+k+'_service'] = eval(self._services[k]['impl'],globals())()
       elif self._services[k]['flow'] == 'consumer':
         self.__dict__['_'+k+'Port'] = OpenRTM_aist.CorbaPort(k)
-        self.__dict__['_'+k+'_service'] = OpenRTM_aist.CorbaConsumer(interfaceType=self._services[k]['if_type'])
+        if 'if_type' in self._services[k]:
+          if_type = self._services[k]['if_type']
+        else:
+          if_type="%s.%s" % (self._services[k]['module_name'], k)
+        #self.__dict__['_'+k+'_service'] = OpenRTM_aist.CorbaConsumer(interfaceType=self._services[k]['if_type'])
+        self.__dict__['_'+k+'_service'] = OpenRTM_aist.CorbaConsumer(interfaceType=eval(if_type, globals()))
+
 
     # initialize of configuration-data.
     for x in init_params(self._params):
@@ -178,19 +184,31 @@ class DataFlowRTC_Base(OpenRTM_aist.DataFlowComponentBase):
         pass
 
     # Set service ports
-    service_keys = self._services.keys()
+    service_keys = list(self._services.keys())
     if service_keys: service_keys.sort()
 
     for k in service_keys:
       s_port=self.__dict__['_'+k+'Port']
       service=self.__dict__['_'+k+'_service']
+      
+      if 'if_name' in self._services[k]:
+        if_name = self._services[k]['if_name']
+      else:
+        if_name = "%s_%s" % (self._services[k]['module_name'], k)
+
+      if 'if_type_name' in self._services[k]:
+        if_type_name = self._services[k]['if_type_name']
+      else:
+        if_type_name = "%s::%s" % (self._services[k]['module_name'], k)
 
       if self._services[k]['flow'] == 'provider':
-        s_port.registerProvider(self._services[k]['if_name'], self._services[k]['if_type_name'], service)
+        #s_port.registerProvider(self._services[k]['if_name'], self._services[k]['if_type_name'], service)
+        s_port.registerProvider(if_name, if_type_name, service)
         self.addPort(s_port)
 
       elif self._services[k]['flow'] == 'consumer':
-        s_port.registerConsumer(self._services[k]['if_name'], self._services[k]['if_type_name'], service)
+        #s_port.registerConsumer(self._services[k]['if_name'], self._services[k]['if_type_name'], service)
+        s_port.registerConsumer(if_name, if_type_name, service)
         self.addPort(s_port)
       else:
         pass
@@ -337,12 +355,13 @@ def mk_rtc_spec(spec_dict):
   
   param=spec_dict['configuration']
   param_keys=['default', '__type__', '__widget__', '__constraints__', '__description__']
-  for p in param:
-    name=p['name']
-    for x in param_keys:
-      if p.has_key(x):  
-         res.append('conf.'+x+'.'+name)
-         res.append(str(p[x]))
+  if param :
+    for p in param:
+      name=p['name']
+      for x in param_keys:
+        if p.has_key(x):  
+          res.append('conf.'+x+'.'+name)
+          res.append(str(p[x]))
   return res
 
 #
@@ -386,12 +405,20 @@ def rtc_init(klass, rtc_yaml='rtc.yaml'):
   _rtc_serviceports_=mk_rtc_dict(_rtc_spec_dict_,'serviceport')
   _rtc_params_=mk_rtc_dict(_rtc_spec_dict_,'configuration')
 
-  if 'service_modules' in _rtc_spec_dict_:
-    for m in _rtc_spec_dict_['service_modules'].split(','):
-      m=m.strip()
-      if m :
-        import_str="from "+m+" import *"
-        exec(import_str,globals())
+  #if 'service_modules' in _rtc_spec_dict_:
+  #  for m in _rtc_spec_dict_['service_modules']:
+  #    m=m.strip()
+  #    if m :
+  #      import_str="from "+m+" import *"
+  #      exec(import_str,globals())
+
+  if 'serviceport' in _rtc_spec_dict_:
+    for sp in _rtc_spec_dict_['serviceport']:
+      if 'impl' in sp:
+        m = sp['impl'].strip()
+        if m :
+          import_str="from %s import *" % m
+          exec(import_str,globals())
   
   mgr = OpenRTM_aist.Manager.init(sys.argv)
   mgr.setModuleInitProc(RtcModuleInit)
