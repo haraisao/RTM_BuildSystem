@@ -171,11 +171,11 @@ def genIDLFile(yaml_data, dist=""):
                 
                 service_data['description'] = sdata['description']
 
-                data=loadTemplate("Service_module.idl", "idl")
-                data=replaceAllKeys(data, service_data, "in Service_module.idl")
-
-                if rename_old_file(os.path.join(dist, "idl"), outfname , data):
-                    writeFile(data, outfname, os.path.join(dist, "idl") )
+                genFile(service_data, "idl", "Service_module.idl", dist, outfname)
+                #data=loadTemplate("Service_module.idl", "idl")
+                #data=replaceAllKeys(data, service_data, "in Service_module.idl")
+                #if rename_old_file(os.path.join(dist, "idl"), outfname , data):
+                #    writeFile(data, outfname, os.path.join(dist, "idl") )
 
 
 
