@@ -88,9 +88,16 @@ def rename_old_file(dirname, fname, data):
             #print("==== %s is same, skip to generate" % fname)
             return False
     return True
-
+#
+#
 def is_defined(attr, data):
     return ((attr in data) and data[attr])
+
+def genFile(yaml_data, tmpl_dir, tmpl_name, out_dir, out_name):
+    data=loadTemplate(tmpl_name, tmpl_dir)
+    data=replaceAllKeys(data, yaml_data, "in "+tmpl_name)
+    if rename_old_file(os.path.join(out_dir, tmpl_dir), out_name , data):
+        writeFile(data, out_name, os.path.join(out_dir, tmpl_dir) )
 #
 #  CMakeLists.txt
 def genCMakeLists(yaml_data, dirname="", dist=""):
@@ -180,59 +187,172 @@ def genServiceImplFile(yaml_data, dist=""):
 
                 service_data.clear()
                 service_data['interface_name'] = interface_name
-                service_data['service_name'] = module_name
+                service_data['interface_type'] = interface_name
+                #service_data['service_name'] = module_name
+                service_data['module_name'] = module_name
                 service_data['service_impl'] = sdata['impl']
+                service_data['service_name'] = "%s_%s" % (module_name, interface_name)
+                service_data['SERVICE_IMPL'] = sdata['impl'].upper()
 
-                if is_defined('operations', sdata):
-                    funcs = ""
-                    for op in sdata['operations']:
-                        resval=""
-                        funcname = op.split(" ",1)
-                        if funcname[0] != "void":
-                            resval = "res"
-                        val=re.match(r"([\w]+)\(([:,\s\w]*)\)", funcname[1])
-                        args = val[2]
-                        if args:
-                            args_ar = args.split(',')
-                            argv=[]
-                            for x in args_ar:
-                                v=x.split(" ")
-                                if v[0] == "in":
-                                    argv.append(v[-1])
-                                elif v[0] == "out":
-                                    if resval:
-                                        resval += ","+v[-1]
-                                    else:
-                                        resval += v[-1]
-                            if argv :
-                                args = ", ".join(argv)
-                                funcs += "  #\n  # %s\n" % op
-                                funcs += "  def "+val[1]+"(self, "+args+"):\n"
-                            else:
-                                funcs += "  #\n  # %s\n" % op
-                                funcs += "  def "+val[1]+"(self):\n"
-                        else:
-                            funcs += "  #\n  # %s\n" % op
-                            funcs += "  def "+val[1]+"(self):\n"
-                        funcs += "    try:\n"
-                        funcs += "      return "+resval+"\n"
-                        funcs += "    except AttributeError:\n      raise CORBA.NO_IMPLEMENT(0, CORBA.COMPLETED_NO)\n\n"
-                    service_data['service_function'] = funcs
+                operations=parse_operations(sdata)
+
+                impls=""
+                ope_decl = ""
+                for f in operations:
+                    impls += generate_cpp_function(f, module_name, sdata['impl'])
+                    ope_decl += generate_h_decls(f, module_name, sdata['impl'])
+
+                service_data['operations_impl'] = impls
+                service_data['operations'] = ope_decl
+
+                genFile(service_data, "include", "ServiceName_impl.h", dist, outfname+".h")
+                genFile(service_data, "src", "ServiceName_impl.cpp", dist, outfname+".cpp")
+
+
+#
+#
+def parse_operations(data):
+    if not is_defined('operations', data): return None
+
+    operations = []
+
+    for op in data['operations']:
+        retval, funcname = op.split(" ",1)
+        ope={}
+        ope['retval'] = retval
+        #
+        # val[1] :func, val[2]: args
+        val=re.match(r"([\w]+)\(([:,\s\w]*)\)", funcname)
+        ope['funcname'] = val[1]
+        args = val[2]
+
+        argv=[]
+        #
+        if args:
+            args_ar = args.split(',')
+
+            for x in args_ar:
+                v = x.split(" ")
+                arg=[]
+                for val in v:
+                    if val : arg.append(val)
+                if len(arg) > 2:
+                    argv.append(arg)
                 else:
-                    service_data['service_function'] = ""
+                    print("-- Error: invalid expression")
 
-                #
-                #
-                data_h=loadTemplate("ServiceName_impl.h", "include")
-                data_h=replaceAllKeys(data_h, service_data, "in ServiceName_impl.h")
-                if rename_old_file(os.path.join(dist, "include"), outfname+".h" , data_h):
-                    writeFile(data_h, outfname+".h", os.path.join(dist, "include") )
-                #
-                data_cpp=loadTemplate("ServiceName_impl.cpp", "src")
-                data_cpp=replaceAllKeys(data_cpp, service_data, "in ServiceName_impl.cpp")
-                if rename_old_file(os.path.join(dist, "src"), outfname+".cpp" , data_cpp):
-                    writeFile(data_cpp, outfname+".cpp", os.path.join(dist, "src") )
-                #
+        ope['args'] = argv
+        operations.append(ope)
+    return operations    
+
+def generate_h_decls(data, mod_name, if_name):
+    tmpl='''
+   %s %s(%s)
+      throw (CORBA::SystemException);
+    '''
+    res = tmpl % (argtype(data['retval'], mod_name,"return"), 
+                    data['funcname'],  ', '.join(arg2ar(data['args'], mod_name, "in")))
+    return res
+
+def generate_cpp_function(data, mod_name, if_name):
+    templ='''
+/*
+    %s %s::%s(%s)
+*/
+%s %s::%s(%s){
+    #warn("Please imprement function.");
+}
+    '''
+    res = templ % ( argtype(data['retval'], mod_name, "return"), if_name,
+                    data['funcname'],
+                    ', '.join(arg2ar(data['args'], mod_name, "in")),
+                    argtype(data['retval'], mod_name,"return"), if_name,
+                    data['funcname'], 
+                    ', '.join(arg2ar(data['args'], mod_name, "in")
+             )
+    )
+    #print(res)
+    return res
+#
+#
+def arg2ar(data, mod_name, flag):
+  res=[]
+  for args in data:
+    if args[0] == "in" or args[0] == "out" :
+        if args[1] == "unsigned":
+            res.append( "%s %s" % (argtype("unsigned "+args[2], mod_name, flag), args[3]) )
+        else:
+            res.append( "%s %s" % (argtype(args[1], mod_name, flag), args[2]) )
+    else:
+        print("Invalid format...")
+  return res
+
+return_type = {
+    'octet' : '::CORBA::Octet',
+    'short' : '::CORBA::Short', 
+    'unsigned short' : '::CORBA::UShort',
+    'long' : '::CORBA::Long',
+    'unsigned long' : '::CORBA::ULong',
+    'float' : '::CORBA::Float',
+    'double' : '::CORBA::Double',
+    'boolean' : '::CORBA::Boolean',
+    'string' : 'char*',
+    'wstring' : 'wchar*',
+    'void' : 'void'  
+    }
+
+in_type ={
+    'octet' : '::CORBA::Octet' ,
+    'short' : '::CORBA::Short' , 
+    'unsigned short' : '::CORBA::UShort',
+    'long' : '::CORBA::Long',
+    'unsigned long' : '::CORBA::ULong',
+    'float' : '::CORBA::Float',
+    'double' : '::CORBA::Double',
+    'boolean' : '::CORBA::Boolean',
+    'string' : 'const char*',
+    'wstring' : 'const wchar*' 
+    }
+
+out_type ={
+    'octet' : '::CORBA::Octet&' ,
+    'short' : '::CORBA::Short&' , 
+    'unsigned short' : '::CORBA::UShort&',
+    'long' : '::CORBA::Long&',
+    'unsigned long' : '::CORBA::ULong&',
+    'float' : '::CORBA::Float&',
+    'double' : '::CORBA::Double&',
+    'boolean' : '::CORBA::Boolean&',
+    'string' : '::CORBA::String_out',
+    'wstring' : '::CORBA::WString_out'
+    }
+
+def argtype(name, mod_name, flag="in"):
+  if flag == "in":
+    if name in in_type:
+        return in_type[name]
+    else:
+        if name.count("::"):
+            return "const %s" % name
+        else:
+            return "const %s::%s" % (mod_name, name)
+
+  elif flag == "out":
+    if name in out_type:
+        return out_type[name]
+    else:   
+        if name.count("::"):
+            return "%s_out" % name
+        else:
+            return "%s::%s_out" % (mod_name, name)
+  else:
+    if name in return_type:
+        return return_type[name]
+    else:
+        if name.count("::"):
+            return "%s*" % name
+        else:
+            return "%s::%s*" % (mod_name, name)
 
 
 #

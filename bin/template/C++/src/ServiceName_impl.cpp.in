@@ -1,0 +1,34 @@
+// -*-C++-*-
+/*!
+ * @file  @service_impl@.cpp
+ * @brief Service implementation code of @service_name@.idl
+ *
+ */
+
+#include <@service_impl@.h>
+
+/*
+ * Example implementational code for IDL interface MyService
+ */
+@service_impl@::@service_impl@()
+{
+  // Please add extra constructor code here.
+}
+
+
+@service_impl@::~@service_impl@()
+{
+  // Please add extra destructor code here.
+}
+
+
+/*
+ * Methods corresponding to IDL attributes and operations
+ */
+@operations_impl@
+
+
+// End of example implementational code
+
+
+

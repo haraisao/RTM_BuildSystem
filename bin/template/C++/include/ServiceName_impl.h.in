@@ -1,0 +1,42 @@
+// -*-C++-*-
+/*!
+ * @file  @service_impl@.h
+ * @brief Service implementation header of MyService.idl
+ *
+ */
+
+#include "@service_name@Skel.h"
+
+#ifndef __@SERVICE_IMPL@_H__
+#define __@SERVICE_IMPL@_H__
+ 
+/*
+ * Example class implementing IDL interface @interface_type@
+ */
+class @service_impl@
+  : public virtual POA_@module_name@::@service_name@,
+   public virtual PortableServer::RefCountServantBase
+{
+ private:
+   // Make sure all instances are built on the heap by making the
+   // destructor non-public
+   //virtual ~@service_impl@();
+
+ public:
+   // standard constructor
+   @service_impl@();
+   virtual ~@service_impl@();
+
+   // attributes and operations
+@operations@
+
+private:
+  // private variables
+
+};
+
+
+
+#endif // MYSERVICESVC_IMPL_H
+
+
