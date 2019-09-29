@@ -72,9 +72,6 @@ def rename_old_file(dirname, fname, data):
         diff_txt = ''.join(diff)
         if diff_txt:
             tm=time.localtime()
-            #backup_fname="%s.%d%03d%02d%02d" % (fname, tm.tm_year-2000, tm.tm_yday, tm.tm_hour, tm.tm_min)
-            #print("==== copy %s to %s" % (full_fname,  backup_fname))
-            #shutil.copy(full_fname, os.path.join(dirname, backup_fname))
             diff_fname="%s.%d%03d%02d%02d.diff" % (fname, tm.tm_year-2000, tm.tm_yday, tm.tm_hour, tm.tm_min)
             try:
                 with open(os.path.join(dirname, diff_fname), "w", encoding='utf-8') as fw:
@@ -93,11 +90,14 @@ def rename_old_file(dirname, fname, data):
 def is_defined(attr, data):
     return ((attr in data) and data[attr])
 
-def genFile(yaml_data, tmpl_dir, tmpl_name, out_dir, out_name):
+def genFile(yaml_data, tmpl_dir, tmpl_name, out_dir, out_name, enc=""):
     data=loadTemplate(tmpl_name, tmpl_dir)
     data=replaceAllKeys(data, yaml_data, "in "+tmpl_name)
     if rename_old_file(os.path.join(out_dir, tmpl_dir), out_name , data):
-        writeFile(data, out_name, os.path.join(out_dir, tmpl_dir) )
+        if enc:
+            writeFile(data, out_name, os.path.join(out_dir, tmpl_dir), enc )
+        else:
+            writeFile(data, out_name, os.path.join(out_dir, tmpl_dir) )
 #
 #  CMakeLists.txt
 def genCMakeLists(yaml_data, dirname="", dist=""):
@@ -111,26 +111,31 @@ def genCMakeLists(yaml_data, dirname="", dist=""):
 def genCppFile(yaml_data, dist=""):
     outfname=yaml_data['ProjectName']
 
-    data=loadTemplate("ProjectName.cpp", "src")
-    data=replaceAllKeys(data, yaml_data, "in ProjectName.cpp")
-    if rename_old_file(os.path.join(dist, "src"), outfname+".cpp" , data): 
-        writeFile(data, outfname+".cpp", os.path.join(dist, "src"), 'utf_8_sig' )
+    genFile(yaml_data, "src", "ProjectName.cpp", dist, outfname+".cpp", 'utf_8_sig')
+    genFile(yaml_data, "src", "ProjectNameComp.cpp", dist, outfname+"Comp.cpp", 'utf_8_sig')
 
-    data2=loadTemplate("ProjectNameComp.cpp", "src")
-    data2=replaceAllKeys(data2, yaml_data, "in ProjectNameComp.cpp")
-    if rename_old_file(os.path.join(dist, "src"), outfname+"Comp.cpp" , data2): 
-        writeFile(data2, outfname+"Comp.cpp", os.path.join(dist, "src"), 'utf_8_sig')
+    #data=loadTemplate("ProjectName.cpp", "src")
+    #data=replaceAllKeys(data, yaml_data, "in ProjectName.cpp")
+    #if rename_old_file(os.path.join(dist, "src"), outfname+".cpp" , data): 
+    #    writeFile(data, outfname+".cpp", os.path.join(dist, "src"), 'utf_8_sig' )
+
+    #data2=loadTemplate("ProjectNameComp.cpp", "src")
+    #data2=replaceAllKeys(data2, yaml_data, "in ProjectNameComp.cpp")
+    #if rename_old_file(os.path.join(dist, "src"), outfname+"Comp.cpp" , data2): 
+    #    writeFile(data2, outfname+"Comp.cpp", os.path.join(dist, "src"), 'utf_8_sig')
 
     #genCMakeLists(yaml_data, "src", dist)
 
 #
 #  XXX.h
 def genHeaderFile(yaml_data, dist=""):
-    data=loadTemplate("ProjectName.h", "include")
-    data=replaceAllKeys(data, yaml_data, "in ProjectName.h")
     outfname=yaml_data['ProjectName']
-    if rename_old_file(os.path.join(dist, "include"), outfname+".h" , data): 
-        writeFile(data, outfname+".h", os.path.join(dist, "include"), 'utf_8_sig')
+    genFile(yaml_data, "include", "ProjectName.h", dist, outfname+".h", 'utf_8_sig')
+#    data=loadTemplate("ProjectName.h", "include")
+#    data=replaceAllKeys(data, yaml_data, "in ProjectName.h")
+#    outfname=yaml_data['ProjectName']
+#    if rename_old_file(os.path.join(dist, "include"), outfname+".h" , data): 
+#        writeFile(data, outfname+".h", os.path.join(dist, "include"), 'utf_8_sig')
 
     #genCMakeLists(yaml_data, "include", dist)
 
@@ -175,7 +180,7 @@ def genIDLFile(yaml_data, dist=""):
 
 
 #
-# XXX_impl.py 
+# XXX_impl.cpp, h
 def genServiceImplFile(yaml_data, dist=""):
     if is_defined('serviceport', yaml_data):
         service_data={}
@@ -199,14 +204,14 @@ def genServiceImplFile(yaml_data, dist=""):
                 impls=""
                 ope_decl = ""
                 for f in operations:
-                    impls += generate_cpp_function(f, module_name, sdata['impl'])
-                    ope_decl += generate_h_decls(f, module_name, sdata['impl'])
+                    impls += generate_cpp_function(f)
+                    ope_decl += generate_h_decls(f)
 
                 service_data['operations_impl'] = impls
                 service_data['operations'] = ope_decl
 
-                genFile(service_data, "include", "ServiceName_impl.h", dist, outfname+".h")
-                genFile(service_data, "src", "ServiceName_impl.cpp", dist, outfname+".cpp")
+                genFile(service_data, "include", "ServiceName_impl.h", dist, outfname+".h", 'utf_8_sig' )
+                genFile(service_data, "src", "ServiceName_impl.cpp", dist, outfname+".cpp", 'utf_8_sig' )
 
 
 #
@@ -220,6 +225,8 @@ def parse_operations(data):
         retval, funcname = op.split(" ",1)
         ope={}
         ope['retval'] = retval
+        ope['module_name'] = data['module_name']
+        ope['impl'] = data['impl']  
         #
         # val[1] :func, val[2]: args
         val=re.match(r"([\w]+)\(([:,\s\w]*)\)", funcname)
@@ -245,16 +252,16 @@ def parse_operations(data):
         operations.append(ope)
     return operations    
 
-def generate_h_decls(data, mod_name, if_name):
+def generate_h_decls(data):
     tmpl='''
    %s %s(%s)
       throw (CORBA::SystemException);
     '''
-    res = tmpl % (argtype(data['retval'], mod_name,"return"), 
-                    data['funcname'],  ', '.join(arg2ar(data['args'], mod_name, "in")))
+    res = tmpl % (argtype(data['retval'], data['module_name'] ,"return"), 
+                    data['funcname'],  ', '.join(arg2ar(data['args'],  data['module_name'], "in")))
     return res
 
-def generate_cpp_function(data, mod_name, if_name):
+def generate_cpp_function(data):
     templ='''
 /*
     %s %s::%s(%s)
@@ -263,12 +270,12 @@ def generate_cpp_function(data, mod_name, if_name):
     #warn("Please imprement function.");
 }
     '''
-    res = templ % ( argtype(data['retval'], mod_name, "return"), if_name,
+    res = templ % ( argtype(data['retval'],  data['module_name'], "return"), data['impl'],
                     data['funcname'],
-                    ', '.join(arg2ar(data['args'], mod_name, "in")),
-                    argtype(data['retval'], mod_name,"return"), if_name,
+                    ', '.join(arg2ar(data['args'],  data['module_name'], "in")),
+                    argtype(data['retval'],  data['module_name'],"return"),  data['impl'],
                     data['funcname'], 
-                    ', '.join(arg2ar(data['args'], mod_name, "in")
+                    ', '.join(arg2ar(data['args'],  data['module_name'], "in")
              )
     )
     #print(res)
