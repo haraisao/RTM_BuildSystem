@@ -285,7 +285,7 @@ def generate_cpp_function(data):
     %s %s::%s(%s)
 */
 %s %s::%s(%s){
-    #warn("Please imprement function.");
+    #warning "Please imprement function."
 }
     '''
     res = templ % ( argtype(data['retval'],  data['module_name'], "return"), data['impl'],
