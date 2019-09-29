@@ -220,11 +220,14 @@ def parse_decls(data):
     for decl in data['decls']:
         val=decl.split(" ")
         v = { 'module_name' : data['module_name'], 'impl' : data['impl'] }
+        
         if val[0] == "typedef":
             if val[1] == "unsigned":
-                v[val[3]] = "%s %s" % (val[1], val[2])
+                v['name'] = val[3]
+                v['decl'] = "%s %s" % (val[1], val[2])
             else:
-                v[val[2]] = val[1]
+                v['name'] = val[2]
+                v['decl'] = val[1]
             decls.append(v)
 
     return decls
