@@ -199,6 +199,7 @@ def genServiceImplFile(yaml_data, dist=""):
                 service_data['service_name'] = "%s_%s" % (module_name, interface_name)
                 service_data['SERVICE_IMPL'] = sdata['impl'].upper()
 
+                delcs = parse_decls(sdata)
                 operations=parse_operations(sdata)
 
                 impls=""
@@ -213,6 +214,20 @@ def genServiceImplFile(yaml_data, dist=""):
                 genFile(service_data, "include", "ServiceName_impl.h", dist, outfname+".h", 'utf_8_sig' )
                 genFile(service_data, "src", "ServiceName_impl.cpp", dist, outfname+".cpp", 'utf_8_sig' )
 
+def parse_decls(data):
+    if not is_defined('decls', data): return None
+    decls=[]
+    for decl in data['decls']:
+        val=decl.split(" ")
+        v = { 'module_name' : data['module_name'], 'impl' : data['impl'] }
+        if val[0] == "typedef":
+            if val[1] == "unsigned":
+                v[val[3]] = "%s %s" % (val[1], val[2])
+            else:
+                v[val[2]] = val[1]
+            decls.append(v)
+
+    return decls
 
 #
 #
