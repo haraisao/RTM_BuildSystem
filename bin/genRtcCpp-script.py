@@ -89,6 +89,8 @@ def rename_old_file(dirname, fname, data):
             return False
     return True
 
+def is_defined(attr, data):
+    return ((attr in data) and data[attr])
 #
 #  CMakeLists.txt
 def genCMakeLists(yaml_data, dirname="", dist=""):
@@ -128,7 +130,7 @@ def genHeaderFile(yaml_data, dist=""):
 #
 # XXX.idl 
 def genIDLFile(yaml_data, dist=""):
-    if 'serviceport' in yaml_data and yaml_data['serviceport']:
+    if is_defined('serviceport', yaml_data):
         service_data={}
         for sdata in yaml_data['serviceport']:
             if 'module_name' in sdata :
@@ -139,7 +141,7 @@ def genIDLFile(yaml_data, dist=""):
                 service_data['interface_name'] = interface_name
                 service_data['module_name'] = module_name
                 service_data['SERVICE_NAME'] = "%s_%s" % (module_name.upper(), interface_name.upper())
-                if 'decls' in sdata:
+                if is_defined('decls', sdata):
                     decls=""
                     for x in sdata['decls']:
                         decls += "  %s;\n" % x
@@ -147,7 +149,7 @@ def genIDLFile(yaml_data, dist=""):
                 else:
                     service_data['decls'] = ""
 
-                if 'operations' in sdata:
+                if is_defined('operations', sdata):
                     funcs = ""
                     for x in sdata['operations']:
                         funcs += "    "+x+";\n"
@@ -168,19 +170,20 @@ def genIDLFile(yaml_data, dist=""):
 #
 # XXX_impl.py 
 def genServiceImplFile(yaml_data, dist=""):
-    if 'serviceport' in yaml_data and yaml_data['serviceport']:
+    if is_defined('serviceport', yaml_data):
         service_data={}
         for sdata in yaml_data['serviceport']:
             if sdata['flow'] == 'provider':
-                if 'module_name' in sdata:
-                    module_name=sdata['module_name']
+                if 'module_name' in sdata: module_name=sdata['module_name']
                 interface_name = sdata['name']
-                outfname=sdata['impl']+".py"
+                outfname=sdata['impl']
+
                 service_data.clear()
                 service_data['interface_name'] = interface_name
                 service_data['service_name'] = module_name
                 service_data['service_impl'] = sdata['impl']
-                if 'operations' in sdata:
+
+                if is_defined('operations', sdata):
                     funcs = ""
                     for op in sdata['operations']:
                         resval=""
@@ -221,12 +224,12 @@ def genServiceImplFile(yaml_data, dist=""):
                 #
                 #
                 data_h=loadTemplate("ServiceName_impl.h", "include")
-                data_h=replaceAllKeys(data_h, service_data, "in Service_module.h")
+                data_h=replaceAllKeys(data_h, service_data, "in ServiceName_impl.h")
                 if rename_old_file(os.path.join(dist, "include"), outfname+".h" , data_h):
-                    writeFile(data, outfname+".h", os.path.join(dist, "include") )
+                    writeFile(data_h, outfname+".h", os.path.join(dist, "include") )
                 #
-                data_cpp=loadTemplate("ServiceName_impl.h", "src")
-                data_cpp=replaceAllKeys(data_cpp, service_data, "in Service_module.cpp")
+                data_cpp=loadTemplate("ServiceName_impl.cpp", "src")
+                data_cpp=replaceAllKeys(data_cpp, service_data, "in ServiceName_impl.cpp")
                 if rename_old_file(os.path.join(dist, "src"), outfname+".cpp" , data_cpp):
                     writeFile(data_cpp, outfname+".cpp", os.path.join(dist, "src") )
                 #
@@ -272,7 +275,7 @@ def getReplaceStrs(data):
 #  Configration spec
 def getConfigrations_spec(data):
     val="\n"
-    if 'configuration' in data and data['configuration']:
+    if is_defined('configuration', data):
         for x in data['configuration']:
             try:
                 val += "    \"conf.default.%s\", \"%s\",\n" % (x['name'], str(x['default']))
@@ -293,7 +296,7 @@ def getConfigrations_spec(data):
 #  bindparametr
 def getBindConfigrations(data):
     val="\n"
-    if 'configuration' in data and data['configuration']:
+    if is_defined('configuration', data):
         for x in data['configuration']:
             try:
                 val += "  bindParameter(\"%s\", m_%s, \"%s\");\n" % (x['name'], x['name'], str(x['default']))
@@ -305,7 +308,7 @@ def getBindConfigrations(data):
 #  declare configuration parameter in a header file
 def getConfigrationsDecl(data):
     val="\n"
-    if 'configuration' in data and data['configuration']:
+    if ('configuration' in data) and data['configuration']:
         for x in data['configuration']:
             try:
                 dtype=x['__type__']
@@ -319,7 +322,7 @@ def getConfigrationsDecl(data):
 # declare dataport in a header file
 def getDataPortDecl(data):
     res=""
-    if 'dataport' in data and data['dataport']:
+    if is_defined('dataport', data):
         for x in data['dataport']:
             res += "  %s m_%s;\n" % (x['type'], x['name'])
             if x['flow'] == 'in':
@@ -332,7 +335,7 @@ def getDataPortDecl(data):
 # dataport initalization in a constructor
 def getDataPortConstuctDecl(data):
     res=""
-    if 'dataport' in data and data['dataport']:
+    if is_defined('dataport', data):
         for x in data['dataport']:
             if x['flow'] == 'in':
                 res += ",\n    m_%sIn(\"%s\", m_%s)" % ( x['name'], x['name'], x['name'])
@@ -343,7 +346,7 @@ def getDataPortConstuctDecl(data):
 # add port 
 def getAddDataPort(data):
     res=""
-    if 'dataport' in data and data['dataport']:
+    if is_defined('dataport', data) :
         for x in data['dataport']:
             if x['flow'] == 'in':
                 res += "\n  addInPort(\"%s\", m_%sIn);" % ( x['name'], x['name'])
@@ -392,7 +395,8 @@ public:
 
 '''
     res = ""
-    if 'dataport' in data:
+
+    if is_defined('dataport', data):
         for x in data['dataport']:
             if x['flow'] == 'in':
                 if ('datalistener' in x) and (not x['datalistener'] in defined_listener):
@@ -405,7 +409,7 @@ public:
 # declare actions
 def getActionsDecl(data):
     val = "\n"
-    if 'actions' in data:
+    if is_defined('actions', data):
         for x in data['actions']:
             for xx in x.keys():
                 if x[xx] :
@@ -425,7 +429,7 @@ def getActionsDecl(data):
 def getActionsDefine(data):
     val = "\n"
     project_name=data['ProjectName']
-    if 'actions' in data:
+    if is_defined('actions', data) :
         for x in data['actions']:
             for xx in x.keys():
                 if xx=='OnInitialize':

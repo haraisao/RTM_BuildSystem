@@ -88,6 +88,10 @@ def rename_old_file(dirname, fname, data):
             #print("==== %s is same, skip to generate" % fname)
             return False
     return True
+
+def is_defined(attr, data):
+    return ((attr in data) and data[attr])
+
 #
 #  CMakeLists.txt
 def genCMakeLists(yaml_data, dirname="", dist=""):
@@ -111,7 +115,7 @@ def genPythonFile(yaml_data, dist=""):
 #
 # XXX.idl 
 def genIDLFile(yaml_data, dist=""):
-    if 'serviceport' in yaml_data and yaml_data['serviceport']:
+    if is_defined('serviceport', yaml_data):
         service_data={}
         for sdata in yaml_data['serviceport']:
             if 'module_name' in sdata :
@@ -122,6 +126,7 @@ def genIDLFile(yaml_data, dist=""):
                 service_data['interface_name'] = interface_name
                 service_data['module_name'] = module_name
                 service_data['SERVICE_NAME'] = "%s_%s" % (module_name.upper(), interface_name.upper())
+
                 if 'decls' in sdata:
                     decls=""
                     for x in sdata['decls']:
@@ -149,7 +154,7 @@ def genIDLFile(yaml_data, dist=""):
 #
 # XXX_impl.py 
 def genServiceImplFile(yaml_data, dist=""):
-    if 'serviceport' in yaml_data and yaml_data['serviceport']:
+    if is_defined('serviceport', yaml_data):
         service_data={}
         for sdata in yaml_data['serviceport']:
             if sdata['flow'] == 'provider':
@@ -161,7 +166,8 @@ def genServiceImplFile(yaml_data, dist=""):
                 service_data['interface_name'] = interface_name
                 service_data['service_name'] = module_name
                 service_data['service_impl'] = sdata['impl']
-                if 'operations' in sdata:
+
+                if is_defined('operations', sdata):
                     funcs = ""
                     for op in sdata['operations']:
                         resval=""
@@ -230,7 +236,7 @@ def getActionsDefine(data):
     val = "\n"
     project_name=data['ProjectName']
 
-    if ('actions' in data) and data['actions']:
+    if is_defined('actions', data):
         for x in data['actions']:
             for xx in x.keys():
                 if xx=='OnInitialize':
@@ -250,7 +256,7 @@ def getActionsDefine(data):
                         val += "  #####\n  #   on%s\n" % (xx[2:])
                         val += "  #\n  #def on%s(self, ec_id):\n  #\n  #  return RTC.RTC_OK\n\n" % (xx[2:])
 
-    if ('dataport' in data) and data['dataport']:
+    if is_defined('dataport', data) :
         for port in data['dataport']:
             if 'datalistener' in port:
                 val += "  #####\n  #   onData\n  #\n"
