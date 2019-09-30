@@ -14,7 +14,7 @@
  * Example class implementing IDL interface @interface_type@
  */
 class @service_impl@
-  : public virtual POA_@module_name@::@service_name@,
+  : public virtual POA_@module_name@::@interface_name@,
    public virtual PortableServer::RefCountServantBase
 {
  private:

@@ -33,6 +33,6 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
-rem cmake --build _build/%PKG_NAME% --config %BUILD_TYPE% --target INSTALL
+cmake --build _build/%PKG_NAME% --config %BUILD_TYPE% --target INSTALL
 @endlocal
 @echo on
