@@ -19,6 +19,13 @@ import omniORB
 import RTC
 import OpenRTM_aist
 
+import OpenRTM_aist.version
+#
+#
+def rtm_version():
+    ver=OpenRTM_aist.version.openrtm_version.split(".")
+    return int(ver[0])*10000 + int(ver[1]) * 100 + int(ver[2])
+
 
 #
 # Global Variables
@@ -72,14 +79,17 @@ def setFunction(fnc):
 #
 class RtcDataListener(OpenRTM_aist.ConnectorDataListenerT):
     def __init__(self, name, typ, obj, func=None):
-        self._name = name
-        self._type = typ
-        self._obj = obj
-        self._func = func
+      self._name = name
+      self._type = typ
+      self._obj = obj
+      self._func = func
     
     def __call__(self, info, cdrdata):
+      if rtm_version() < 20000:
         data = OpenRTM_aist.ConnectorDataListenerT.__call__(self,
                         info, cdrdata, self._type)
+      else:
+        data = cdrdata
 
         if self._func :
           self._func(self._name, data)
@@ -88,7 +98,7 @@ class RtcDataListener(OpenRTM_aist.ConnectorDataListenerT):
           self._obj.onData(self._name, data)
 
     def _set_callback(self, func):
-        self._func = func
+      self._func = func
 
 ##
 # @class DataFlowRTC_Base
@@ -231,9 +241,15 @@ class DataFlowRTC_Base(OpenRTM_aist.DataFlowComponentBase):
     try:
       port = eval('self._'+portname+'In')
       if isinstance(port, OpenRTM_aist.InPort) :
-        port.addConnectorDataListener(
-          OpenRTM_aist.ConnectorDataListenerType.ON_BUFFER_WRITE,
-          RtcDataListener(port._name, port._value, self, func))
+        if rtm_version() < 20000:
+          port.addConnectorDataListener(
+              OpenRTM_aist.ConnectorDataListenerType.ON_BUFFER_WRITE,
+              RtcDataListener(port._name, port._value, self, func))
+        else:
+          port.addConnectorDataListener(
+              OpenRTM_aist.ConnectorDataListenerType.ON_RECEIVED,
+              RtcDataListener(port._name, port._value, self, func))
+
         return True
       else:
         print("Invalid PortType")

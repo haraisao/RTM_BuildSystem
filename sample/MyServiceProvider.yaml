@@ -1,0 +1,53 @@
+name: MyServiceProvider
+version: 1.0.0
+vendor : AIST
+category : sample
+component_type : STATIC
+activity_type : PERIODIC
+kind: DataFlowComponent
+max_instance : 1
+language : Python
+lang_type : SCRIPT
+description : Service port sample
+maintainer: Isao Hara
+author: Isao Hara(isao-hara@aist.go.jp)
+
+
+actions:
+  - OnInitialize: true
+  - OnFinalize: false
+  - OnStartup: false
+  - OnShutdown: false
+  - OnActivated: false
+  - OnDeactivated: false
+  - OnAborting: false
+  - OnError: false
+  - OnReset: false
+  - OnExecute: false
+  - OnStateUpdate: false
+  - OnRateChanged: false
+  - OnAction: false
+  - OnModeChanged: false
+
+dataport :
+
+serviceport : 
+  - name : MyService
+    flow : provider
+    module_name: SimpleService
+    if_name: myservice0
+    if_type_name: MyService
+    decls:
+      - typedef sequence<string> EchoList
+      - typedef sequence<float> ValueList
+    operations:
+      - string echo(in string msg)
+      - EchoList get_echo_history()
+      - void set_value(in float value)
+      - float get_value()
+      - ValueList get_value_history()
+    impl : MyService_impl
+    description : Simple Service Provider 
+    
+configuration : 
+
