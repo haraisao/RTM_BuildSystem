@@ -95,6 +95,10 @@ install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}Comp
 gen_setup_bat()
 #install(FILES ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/setup.bat DESTINATION bin)
 
+#---< Comment
+
+#--->
+
 #
 #  install 3rdpary runtime libraries
 #install(FILES ${SNDFILE_RUNTIME} DESTINATION bin)
@@ -104,3 +108,5 @@ gen_setup_bat()
 # Package creation
 # By default, do not warn when built on machines using only VS Express:
 #CreatePackageCPack()
+
+

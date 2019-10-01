@@ -94,13 +94,13 @@ def is_defined(attr, data):
 
 #
 #
-def genFile(yaml_data, tmpl_dir, tmpl_name, out_dir, out_name, enc=""):
+def genFile(yaml_data, tmpl_dir, tmpl_name, out_dir, out_name, enc="", comment_sym="\/\/"):
     data=loadTemplate(tmpl_name, tmpl_dir)
     data=replaceAllKeys(data, yaml_data, "in "+tmpl_name)
     org_content = getFileContent(os.path.join(out_dir, tmpl_dir, out_name))
-    org_code=getOwnCodeArea(org_content)
+    org_code=getOwnCodeArea(org_content, comment_sym)
     for key in org_code:
-        area=getCodeArea(data, key)
+        area=getCodeArea(data, key, 0, comment_sym )
         if area:
             data=data[:area[0]] + org_code[key][1] + data[area[1]:]
 
@@ -121,10 +121,11 @@ def genCMakeLists(yaml_data, dirname="", dist=""):
             yaml_data['service_impl_cpp'] += "  src/"+sdata['impl']+".cpp\n"
             yaml_data['service_idl']="idl/%s_%s.idl\n" % (sdata['module_name'],  sdata['name'])
 
-    data=loadTemplate("CMakeLists.txt", dirname)
-    data=replaceAllKeys(data, yaml_data, "in CMakeLists.txt("+dirname+")")
-    if rename_old_file(os.path.join(dist, dirname), "CMakeLists.txt" , data):
-        writeFile(data, "CMakeLists.txt", os.path.join(dist, dirname))
+    genFile(yaml_data, dirname, "CMakeLists.txt", dist, "CMakeLists.txt", comment_sym="\#")
+    #data=loadTemplate("CMakeLists.txt", dirname)
+    #data=replaceAllKeys(data, yaml_data, "in CMakeLists.txt("+dirname+")")
+    #if rename_old_file(os.path.join(dist, dirname), "CMakeLists.txt" , data):
+    #    writeFile(data, "CMakeLists.txt", os.path.join(dist, dirname))
 
 #
 # XXX.cpp and XXXComp.cpp
@@ -652,14 +653,19 @@ def getFileContent(fname):
         pass
     return res
 
-def getOwnCodeArea(content):
+start_pattern=r"%s\-{3,}\<"
+end_pattern=r"%s\-{3,}\>"
+
+def getOwnCodeArea(content, comment_sym="\/\/"):
     start = 0
     mobj=1
     res={}
+    start_mark=(start_pattern % comment_sym) +" [\w]+"
+    end_mark=(end_pattern % comment_sym)
     while mobj:
-        mobj = re.search(r"(\/\/,\#)\-{3,}< [\w]+",content[start:])
+        mobj = re.search(start_mark, content[start:])
         if mobj:
-            mobj_e = re.search(r"(\/\/,\#)\-{3,}\>",content[start+mobj.end():])
+            mobj_e = re.search(end_mark, content[start+mobj.end():])
             if mobj_e:
                 spos=start+mobj.end()
                 epos=start+mobj.end()+mobj_e.start()
@@ -673,10 +679,12 @@ def getOwnCodeArea(content):
                 mobj = False
     return res
 
-def getCodeArea(content, key, start=0):
-    mobj = re.search(r"(\/\/,\#)\-{3,}< %s" % key,content[start:])
+def getCodeArea(content, key, start=0, comment_sym="\/\/"):
+    start_mark=(start_pattern % comment_sym) + (" %s" % key)
+    end_mark=(end_pattern % comment_sym)
+    mobj = re.search(start_mark, content[start:])
     if mobj:
-        mobj_e = re.search(r"(\/\/,\#)\-{3,}>",content[start+mobj.end():])
+        mobj_e = re.search(end_mark, content[start+mobj.end():])
         spos=start+mobj.end()
         if mobj_e:
             epos=start+mobj.end()+mobj_e.start()
