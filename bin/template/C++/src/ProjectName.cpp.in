@@ -38,7 +38,6 @@ const char* rtcomponent_spec[] =
 @ProjectName@::@ProjectName@(RTC::Manager* manager)
     // <rtc-template block="initializer">
   : RTC::DataFlowComponentBase(manager)@dataport_construct_decl@
-
     // </rtc-template>
 {
 }
@@ -56,19 +55,13 @@ RTC::ReturnCode_t @ProjectName@::onInitialize()
   RTC_INFO(("@ProjectName@ : @description@"));
 
   // Registration: InPort/OutPort/Service
-  // <rtc-template block="registration">
-  // Set DataPort buffers
   @add_dataports@
-
-  // Set service provider to Ports
-
-  // Set service consumers to Ports
-
-  // Set CORBA Service Ports
-
-  // </rtc-template>
+  // Confguration Parameters
   @bind_configuration@
 
+//---< onInitialize
+
+//--->
   RTC_DEBUG(("onInitialize finish"));
   return RTC::RTC_OK;
 }

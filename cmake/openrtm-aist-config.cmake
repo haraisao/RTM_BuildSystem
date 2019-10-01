@@ -38,7 +38,6 @@
 # - OPENRTM_IDL_WRAPPER_FLAGS: rtm-skelwrapper flag
 # - OPENRTM_IDLC: IDL command
 # - OPENRTM_IDLFLAGS: IDL optins
-
 message("===== yacob.cmane ====")
 if(NOT NO_INFO)
   message(STATUS "OpenRTMConfig.cmake found.")
@@ -47,6 +46,9 @@ endif()
 
 
 include("${CMAKE_CURRENT_LIST_DIR}/utils.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/idl_compile.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/rtc_build.cmake")
+
 include("${CMAKE_CURRENT_LIST_DIR}/vc_version.cmake")
 
 get_vc_version(RTM_VC_VER VC_ARCH)
@@ -73,7 +75,6 @@ find_package(omniORB REQUIRED)
 
 # Basic compiler/linker options
 get_filename_component(OPENRTM_DIR "${CMAKE_CURRENT_LIST_DIR}/../${OPENRTM_VERSION}" ABSOLUTE)
-
 set(OPENRTM_CFLAGS ${OMNIORB_CFLAGS};-DINCLUDE_stub_in_nt_dll;-DRTC_CORBA_CXXMAPPING11;-D_WIN32_WINNT=0x0500)
 set(OPENRTM_INCLUDE_DIRS ${OPENRTM_DIR};${OPENRTM_DIR}/rtm/idl;${OPENRTM_DIR}/rtm/ext)
 set(OPENRTM_LDFLAGS )
@@ -110,9 +111,6 @@ set(OPENRTM_IDL_WRAPPER rtm-skelwrapper.py)
 set(OPENRTM_IDL_WRAPPER_FLAGS --include-dir="";--skel-suffix=Skel;--stub-suffix=Stub)
 set(OPENRTM_IDLC omniidl)
 set(OPENRTM_IDLFLAGS -bcxx;-Wba;-nf;-Wbshortcut;-I${OPENRTM_DIR}/rtm/idl)
-
-
-include("${CMAKE_CURRENT_LIST_DIR}/rtc_build.cmake")
 
 #
 #

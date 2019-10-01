@@ -7,7 +7,7 @@
 macro(add_idl_files)
   if (${ARGC} GREATER 0)
     #message("--- Set IDFILE: ${ARGN}")
-    include("${OPENRTM_DIR}/../cmake/idl_compile.cmake")
+    #include("${OPENRTM_DIR}/cmake/idl_compile.cmake")
     set(idls )
     foreach(itm ${ARGN})
       list(APPEND IDL_FILES  "${CMAKE_CURRENT_SOURCE_DIR}/${itm}")

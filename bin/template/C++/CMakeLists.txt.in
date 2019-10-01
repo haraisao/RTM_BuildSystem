@@ -28,22 +28,25 @@ RewriteBuildOptions()
 ##############
 #
 #  Addtional IDL files
-#add_idl_files(
+add_idl_files(
 #  idl/BasicDataType.idl
 #  idl/ExtendedDataTypes.idl
-#)
+@service_idl@
+)
 #
 #  compile IDL file
-#compile_idl_files()
+compile_idl_files()
 
 #
 #
 set(rtc_headers
+@service_impl_h@
   include/@ProjectName@.h
 )
 
 set(rtc_srcs
-    src/@ProjectName@.cpp
+@service_impl_cpp@
+  src/@ProjectName@.cpp
 )
 
 set(rtc_exec_src src/@ProjectName@Comp.cpp)

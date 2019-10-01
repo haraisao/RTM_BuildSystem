@@ -55,11 +55,12 @@ def writeFile(data, fname, dirname="", enc='utf-8'):
 #
 def file_diff(file1, text2):
     try:
-        with open(file1) as f1:
+        with open(file1, "r", encoding="utf_8_sig") as f1:
             text1=f1.read()
         return  difflib.context_diff(text1.splitlines(keepends=True), text2.splitlines(keepends=True),
                         fromfile=os.path.basename(file1), tofile="new_"+os.path.basename(file1))
     except:
+        #traceback.print_exc()
         return None
 
 #
@@ -82,17 +83,27 @@ def rename_old_file(dirname, fname, data):
 
             return True
         else:
-            #print("==== %s is same, skip to generate" % fname)
+            print("==== %s is same, skip to generate" % fname)
             return False
+
     return True
 #
 #
 def is_defined(attr, data):
     return ((attr in data) and data[attr])
 
+#
+#
 def genFile(yaml_data, tmpl_dir, tmpl_name, out_dir, out_name, enc=""):
     data=loadTemplate(tmpl_name, tmpl_dir)
     data=replaceAllKeys(data, yaml_data, "in "+tmpl_name)
+    org_content = getFileContent(os.path.join(out_dir, tmpl_dir, out_name))
+    lst=getOwnCodeArea(org_content)
+    for key in lst:
+        area=getCodeArea(data, key)
+        if area:
+            data=data[:area[0]] + lst[key][1] + data[area[1]:]
+
     if rename_old_file(os.path.join(out_dir, tmpl_dir), out_name , data):
         if enc:
             writeFile(data, out_name, os.path.join(out_dir, tmpl_dir), enc )
@@ -101,6 +112,15 @@ def genFile(yaml_data, tmpl_dir, tmpl_name, out_dir, out_name, enc=""):
 #
 #  CMakeLists.txt
 def genCMakeLists(yaml_data, dirname="", dist=""):
+    yaml_data['service_impl_h'] = ""
+    yaml_data['service_impl_cpp'] = ""
+    yaml_data['service_idl'] = ""
+    if is_defined('serviceport', yaml_data):
+        for sdata in yaml_data['serviceport']:
+            yaml_data['service_impl_h'] += "  include/"+sdata['impl']+".h\n"
+            yaml_data['service_impl_cpp'] += "  src/"+sdata['impl']+".cpp\n"
+            yaml_data['service_idl']="idl/%s_%s.idl\n" % (sdata['module_name'],  sdata['name'])
+
     data=loadTemplate("CMakeLists.txt", dirname)
     data=replaceAllKeys(data, yaml_data, "in CMakeLists.txt("+dirname+")")
     if rename_old_file(os.path.join(dist, dirname), "CMakeLists.txt" , data):
@@ -114,30 +134,11 @@ def genCppFile(yaml_data, dist=""):
     genFile(yaml_data, "src", "ProjectName.cpp", dist, outfname+".cpp", 'utf_8_sig')
     genFile(yaml_data, "src", "ProjectNameComp.cpp", dist, outfname+"Comp.cpp", 'utf_8_sig')
 
-    #data=loadTemplate("ProjectName.cpp", "src")
-    #data=replaceAllKeys(data, yaml_data, "in ProjectName.cpp")
-    #if rename_old_file(os.path.join(dist, "src"), outfname+".cpp" , data): 
-    #    writeFile(data, outfname+".cpp", os.path.join(dist, "src"), 'utf_8_sig' )
-
-    #data2=loadTemplate("ProjectNameComp.cpp", "src")
-    #data2=replaceAllKeys(data2, yaml_data, "in ProjectNameComp.cpp")
-    #if rename_old_file(os.path.join(dist, "src"), outfname+"Comp.cpp" , data2): 
-    #    writeFile(data2, outfname+"Comp.cpp", os.path.join(dist, "src"), 'utf_8_sig')
-
-    #genCMakeLists(yaml_data, "src", dist)
-
 #
 #  XXX.h
 def genHeaderFile(yaml_data, dist=""):
     outfname=yaml_data['ProjectName']
     genFile(yaml_data, "include", "ProjectName.h", dist, outfname+".h", 'utf_8_sig')
-#    data=loadTemplate("ProjectName.h", "include")
-#    data=replaceAllKeys(data, yaml_data, "in ProjectName.h")
-#    outfname=yaml_data['ProjectName']
-#    if rename_old_file(os.path.join(dist, "include"), outfname+".h" , data): 
-#        writeFile(data, outfname+".h", os.path.join(dist, "include"), 'utf_8_sig')
-
-    #genCMakeLists(yaml_data, "include", dist)
 
 #
 # XXX.idl 
@@ -172,12 +173,6 @@ def genIDLFile(yaml_data, dist=""):
                 service_data['description'] = sdata['description']
 
                 genFile(service_data, "idl", "Service_module.idl", dist, outfname)
-                #data=loadTemplate("Service_module.idl", "idl")
-                #data=replaceAllKeys(data, service_data, "in Service_module.idl")
-                #if rename_old_file(os.path.join(dist, "idl"), outfname , data):
-                #    writeFile(data, outfname, os.path.join(dist, "idl") )
-
-
 
 #
 # XXX_impl.cpp, h
@@ -563,10 +558,11 @@ def getActionsDecl(data):
                     else:
                         val += "   virtual RTC::ReturnCode_t on%s(RTC::UniqueId ec_id);\n\n" % xx[2:]
                 else:
-                    if xx == 'OnInitialize' or xx == 'OnFinalize':
-                        val += "   /* virtual RTC::ReturnCode_t on%s(); */\n\n" % xx[2:]
-                    else:
-                        val += "   /* virtual RTC::ReturnCode_t on%s(RTC::UniqueId ec_id); */\n\n" % xx[2:]
+                    pass
+                    #if xx == 'OnInitialize' or xx == 'OnFinalize':
+                    #    val += "   /* virtual RTC::ReturnCode_t on%s(); */\n\n" % xx[2:]
+                    #else:
+                    #    val += "   /* virtual RTC::ReturnCode_t on%s(RTC::UniqueId ec_id); */\n\n" % xx[2:]
     return val
 
 #
@@ -581,15 +577,56 @@ def getActionsDefine(data):
                     pass
                 elif x[xx] :
                     if xx == 'OnFinalize':
-                        val += "RTC::ReturnCode_t %s::on%s()\n{\n\n  return RTC::RTC_OK;\n}\n\n" % (project_name, xx[2:])
+                        val += "RTC::ReturnCode_t %s::on%s()\n{\n//---< on%s\n\n//--->\n  return RTC::RTC_OK;\n}\n\n" % (project_name, xx[2:],  xx[2:])
                     else:
-                        val += "RTC::ReturnCode_t %s::on%s(RTC::UniqueId ec_id)\n{\n\n  return RTC::RTC_OK;\n}\n\n" % (project_name, xx[2:])
+                        val += "RTC::ReturnCode_t %s::on%s(RTC::UniqueId ec_id)\n{\n//---< on%s\n\n//--->\n  return RTC::RTC_OK;\n}\n\n" % (project_name, xx[2:],  xx[2:])
                 else:
-                    if xx == 'OnFinalize':
-                        val += "/*\nRTC::ReturnCode_t %s::on%s()\n{\n\n  return RTC::RTC_OK;\n}\n*/\n\n" % (project_name, xx[2:])
-                    else:
-                        val += "/*\nRTC::ReturnCode_t %s::on%s(RTC::UniqueId ec_id)\n{\n\n  return RTC::RTC_OK;\n}\n*/\n\n" % (project_name, xx[2:])
+                    pass
+                    #if xx == 'OnFinalize':
+                    #    val += "/*\nRTC::ReturnCode_t %s::on%s()\n{\n\n  return RTC::RTC_OK;\n}\n*/\n\n" % (project_name, xx[2:])
+                    #else:
+                    #    val += "/*\nRTC::ReturnCode_t %s::on%s(RTC::UniqueId ec_id)\n{\n\n  return RTC::RTC_OK;\n}\n*/\n\n" % (project_name, xx[2:])
     return val
+
+def getFileContent(fname):
+    res=""
+    with open(fname, "r", encoding="utf-8") as f:
+        res=f.read()
+    return res
+
+def getOwnCodeArea(content):
+    start = 0
+    mobj=1
+    res={}
+    while mobj:
+        mobj = re.search(r"\/\/\-\-\-\< [\w]+",content[start:])
+        if mobj:
+            mobj_e = re.search(r"\/\/\-\-\-\>",content[start+mobj.end():])
+            if mobj_e:
+                spos=start+mobj.end()
+                epos=start+mobj.end()+mobj_e.start()
+                res[mobj[0][6:].strip()] = [[spos, epos], content[spos:epos]]
+                
+                start += mobj.end() + mobj_e.end()
+            else:
+                spos=start+mobj.end()
+                epos=-1
+                res[mobj[0][6:].strip()] = [[spos, -1], content[spos:]]
+                mobj = False
+    return res
+
+def getCodeArea(content, key, start=0):
+    mobj = re.search(r"\/\/\-\-\-\< %s" % key,content[start:])
+    if mobj:
+        mobj_e = re.search(r"\/\/\-\-\-\>",content[start+mobj.end():])
+        spos=start+mobj.end()
+        if mobj_e:
+            epos=start+mobj.end()+mobj_e.start()
+            return [spos, epos]
+                
+        else:
+            return [spos, -1] 
+    return None
 
 #
 # generate C++ files
