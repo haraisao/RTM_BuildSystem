@@ -56,6 +56,7 @@ RTC::ReturnCode_t @ProjectName@::onInitialize()
 
   // Registration: InPort/OutPort/Service
   @add_dataports@
+  @add_serviceports@
   // Confguration Parameters
   @bind_configuration@
 

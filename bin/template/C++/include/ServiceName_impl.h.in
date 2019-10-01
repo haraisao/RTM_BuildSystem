@@ -32,7 +32,8 @@ class @service_impl@
 
 private:
   // private variables
-
+//---< private_decls
+//--->
 };
 
 

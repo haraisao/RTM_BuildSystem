@@ -98,11 +98,11 @@ def genFile(yaml_data, tmpl_dir, tmpl_name, out_dir, out_name, enc=""):
     data=loadTemplate(tmpl_name, tmpl_dir)
     data=replaceAllKeys(data, yaml_data, "in "+tmpl_name)
     org_content = getFileContent(os.path.join(out_dir, tmpl_dir, out_name))
-    lst=getOwnCodeArea(org_content)
-    for key in lst:
+    org_code=getOwnCodeArea(org_content)
+    for key in org_code:
         area=getCodeArea(data, key)
         if area:
-            data=data[:area[0]] + lst[key][1] + data[area[1]:]
+            data=data[:area[0]] + org_code[key][1] + data[area[1]:]
 
     if rename_old_file(os.path.join(out_dir, tmpl_dir), out_name , data):
         if enc:
@@ -280,7 +280,9 @@ def generate_cpp_function(data):
     %s %s::%s(%s)
 */
 %s %s::%s(%s){
-    #warning "Please imprement function."
+//---< %s_impl
+
+//--->
 }
     '''
     res = templ % ( argtype(data['retval'],  data['module_name'], "return"), data['impl'],
@@ -288,10 +290,9 @@ def generate_cpp_function(data):
                     ', '.join(arg2ar(data['args'],  data['module_name'], "in")),
                     argtype(data['retval'],  data['module_name'],"return"),  data['impl'],
                     data['funcname'], 
-                    ', '.join(arg2ar(data['args'],  data['module_name'], "in")
-             )
+                    ', '.join(arg2ar(data['args'],  data['module_name'], "in")), data['funcname']
     )
-    #print(res)
+
     return res
 #
 #
@@ -390,8 +391,14 @@ def replaceAllKeys(data, yaml_data, info=""):
                 data=data.replace('@'+x+'@', getDataPortDecl(yaml_data))
             elif x == 'dataport_construct_decl':
                 data=data.replace('@'+x+'@', getDataPortConstuctDecl(yaml_data))
+            elif x == 'serviceport_decl':
+                data=data.replace('@'+x+'@', getServicePortDecl(yaml_data))
             elif x == 'add_dataports':
                 data=data.replace('@'+x+'@', getAddDataPort(yaml_data))
+            elif x == 'add_serviceports':
+                data=data.replace('@'+x+'@', getAddServicePort(yaml_data))
+            elif x == 'service_port_h':
+                data=data.replace('@'+x+'@', getAddServicePortHeader(yaml_data))
             elif x == 'data_listener':
                 data=data.replace('@'+x+'@', getDataListener(yaml_data))
             elif x == 'action_decls':
@@ -469,6 +476,7 @@ def getDataPortDecl(data):
                 res += "  InPort<%s> m_%sIn;\n\n" % (x['type'], x['name'])
             else:
                 res += "  OutPort<%s> m_%sOut;\n\n" % (x['type'], x['name'])
+
     return res
 
 #
@@ -481,6 +489,13 @@ def getDataPortConstuctDecl(data):
                 res += ",\n    m_%sIn(\"%s\", m_%s)" % ( x['name'], x['name'], x['name'])
             else:
                 res += ",\n    m_%sOut(\"%s\", m_%s)" % ( x['name'], x['name'], x['name'])
+
+    if is_defined('serviceport', data):
+        for x in data['serviceport']:
+            if x['flow'] == 'provider':
+                res += ",\n    m_%sPPort(\"%s\")" % ( x['name'], x['name'])
+            else:
+                res += ",\n    m_%sCPort(\"%s\")" % ( x['name'], x['name'])
     return res
 #
 # add port 
@@ -495,6 +510,46 @@ def getAddDataPort(data):
                     res += "\n      new %sDataListener(\"ON_BUFFER_WRITE\", this), false); \n" % (x['datalistener'])
             else:
                 res += "\n  addOutPort(\"%s\", m_%sOut);" % ( x['name'], x['name'])
+    return res
+
+#
+# declare dataport in a header file
+def getServicePortDecl(data):
+    res=""
+    if is_defined('serviceport', data):
+        for x in data['serviceport']:
+            if x['flow'] == 'provider':
+                res += "  RTC::CorbaPort m_%sPPort;\n" % (x['name'])
+                res += "  %s m_%s_provider;\n\n" % (x['impl'],x['name'])
+            else:
+                res += "  RTC::CorbaPort m_%sCPort;\n" % (x['name'])
+                res += "  RTC::CobraConsumer<%s::%s> m_%s_consumer;\n\n" % (x['SimpleService'], x['name'], x['name'])
+    return res
+
+#
+# add port 
+def getAddServicePort(data):
+    res=""
+
+    if is_defined('serviceport', data):
+        for x in data['serviceport']:
+            if x['flow'] == 'provider':
+                res += "\n  m_%sPPort.registerProvider(\"%s\", \"%s\", m_%s_provider);" % (x['name'],x['if_name'], x['if_type_name'], x['name'])
+                res += "\n  addPort(m_%sPPort);" % ( x['name'])
+            else:
+                res += "\n  m_%sCPort.registerConsumer(\"%s\", \"%s\", m_%s_consumer);" % (x['name'],x['if_name'], x['if_type_name'], x['name'])
+                res += "\n  addPort(m_%sCPort);" % ( x['name'])
+    return res
+
+#
+# add port 
+def getAddServicePortHeader(data):
+    res=""
+
+    if is_defined('serviceport', data):
+        for x in data['serviceport']:
+            if x['flow'] == 'provider':
+                 res += "#include <%s.h>\n" % ( x['impl'])
     return res
 
 #
@@ -590,8 +645,11 @@ def getActionsDefine(data):
 
 def getFileContent(fname):
     res=""
-    with open(fname, "r", encoding="utf-8") as f:
-        res=f.read()
+    try:
+        with open(fname, "r", encoding="utf-8") as f:
+            res=f.read()
+    except:
+        pass
     return res
 
 def getOwnCodeArea(content):
@@ -599,9 +657,9 @@ def getOwnCodeArea(content):
     mobj=1
     res={}
     while mobj:
-        mobj = re.search(r"\/\/\-\-\-\< [\w]+",content[start:])
+        mobj = re.search(r"(\/\/,\#)\-{3,}< [\w]+",content[start:])
         if mobj:
-            mobj_e = re.search(r"\/\/\-\-\-\>",content[start+mobj.end():])
+            mobj_e = re.search(r"(\/\/,\#)\-{3,}\>",content[start+mobj.end():])
             if mobj_e:
                 spos=start+mobj.end()
                 epos=start+mobj.end()+mobj_e.start()
@@ -616,16 +674,15 @@ def getOwnCodeArea(content):
     return res
 
 def getCodeArea(content, key, start=0):
-    mobj = re.search(r"\/\/\-\-\-\< %s" % key,content[start:])
+    mobj = re.search(r"(\/\/,\#)\-{3,}< %s" % key,content[start:])
     if mobj:
-        mobj_e = re.search(r"\/\/\-\-\-\>",content[start+mobj.end():])
+        mobj_e = re.search(r"(\/\/,\#)\-{3,}>",content[start+mobj.end():])
         spos=start+mobj.end()
         if mobj_e:
             epos=start+mobj.end()+mobj_e.start()
-            return [spos, epos]
-                
+            return [spos, epos]        
         else:
-            return [spos, -1] 
+            None
     return None
 
 #

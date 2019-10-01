@@ -40,15 +40,9 @@
 #include <rtm/SystemLogger.h>
 #include <coil/Mutex.h>
 
-// Service implementation headers
-// <rtc-template block="service_impl_h">
-
-// </rtc-template>
-
-// Service Consumer stub headers
-// <rtc-template block="consumer_stub_h">
-
-// </rtc-template>
+@service_port_h@
+//---< Optional_incs
+//--->
 
 using namespace RTC;
 
@@ -73,61 +67,25 @@ class @ProjectName@
    */
   ~@ProjectName@();
 
-  // <rtc-template block="public_attribute">
-
-  // </rtc-template>
-
-  // <rtc-template block="public_operation">
-
-  // </rtc-template>
-
    /**
      Actions
   */
    @action_decls@
 
+//---< public_funcs
+//--->
+
  protected:
-  // <rtc-template block="protected_attribute">
-
-  // </rtc-template>
-
-  // <rtc-template block="protected_operation">
-
-  // </rtc-template>
-
-  // DataPort declaration
-  // <rtc-template block="dataport_declare">
-
 @dataport_decl@
-
-  // </rtc-template>
-
-  // CORBA Port declaration
-  // <rtc-template block="corbaport_declare">
-
-  // </rtc-template>
-
-  // Service declaration
-  // <rtc-template block="service_declare">
-
-  // </rtc-template>
-
-  // Consumer declaration
-  // <rtc-template block="consumer_declare">
-
-  // </rtc-template>
+@serviceport_decl@
+//---< protected_decls
+//--->
 
  private:
-
-  // <rtc-template block="private_attribute">
   coil::Mutex m_mutex;
   @configuration_decl@
-
-  // </rtc-template>
-
-  // <rtc-template block="private_operation">
-
-  // </rtc-template>
+//---< private_decls
+//--->
 
 };
 

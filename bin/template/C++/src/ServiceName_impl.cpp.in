@@ -6,9 +6,11 @@
  */
 
 #include <@service_impl@.h>
+//---< Optional_delcs
+//--->
 
 /*
- * Example implementational code for IDL interface MyService
+ * Example implementational code for IDL interface @service_name@
  */
 @service_impl@::@service_impl@()
 {
