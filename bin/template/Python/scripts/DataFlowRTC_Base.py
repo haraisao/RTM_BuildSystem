@@ -96,6 +96,7 @@ class RtcDataListener(OpenRTM_aist.ConnectorDataListenerT):
 
         else:
           self._obj.onData(self._name, data)
+      return OpenRTM_aist.ConnectorListenerStatus.NO_CHANGE, data
 
     def _set_callback(self, func):
       self._func = func
