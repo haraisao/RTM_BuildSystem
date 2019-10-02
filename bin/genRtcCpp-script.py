@@ -117,15 +117,12 @@ def genCMakeLists(yaml_data, dirname="", dist=""):
     yaml_data['service_idl'] = ""
     if is_defined('serviceport', yaml_data):
         for sdata in yaml_data['serviceport']:
-            yaml_data['service_impl_h'] += "  include/"+sdata['impl']+".h\n"
-            yaml_data['service_impl_cpp'] += "  src/"+sdata['impl']+".cpp\n"
+            if 'impl' in sdata:
+                yaml_data['service_impl_h'] += "  include/"+sdata['impl']+".h\n"
+                yaml_data['service_impl_cpp'] += "  src/"+sdata['impl']+".cpp\n"
             yaml_data['service_idl']="idl/%s_%s.idl\n" % (sdata['module_name'],  sdata['name'])
 
     genFile(yaml_data, dirname, "CMakeLists.txt", dist, "CMakeLists.txt", comment_sym="\#")
-    #data=loadTemplate("CMakeLists.txt", dirname)
-    #data=replaceAllKeys(data, yaml_data, "in CMakeLists.txt("+dirname+")")
-    #if rename_old_file(os.path.join(dist, dirname), "CMakeLists.txt" , data):
-    #    writeFile(data, "CMakeLists.txt", os.path.join(dist, dirname))
 
 #
 # XXX.cpp and XXXComp.cpp
@@ -280,7 +277,9 @@ def generate_cpp_function(data):
 /*
     %s %s::%s(%s)
 */
-%s %s::%s(%s){
+%s %s::%s(%s)
+  throw (CORBA::SystemException)
+{
 //---< %s_impl
 
 //--->
@@ -524,7 +523,7 @@ def getServicePortDecl(data):
                 res += "  %s m_%s_provider;\n\n" % (x['impl'],x['name'])
             else:
                 res += "  RTC::CorbaPort m_%sCPort;\n" % (x['name'])
-                res += "  RTC::CobraConsumer<%s::%s> m_%s_consumer;\n\n" % (x['SimpleService'], x['name'], x['name'])
+                res += "  RTC::CorbaConsumer<%s::%s> m_%s_consumer;\n\n" % (x['module_name'], x['name'], x['name'])
     return res
 
 #
@@ -551,6 +550,8 @@ def getAddServicePortHeader(data):
         for x in data['serviceport']:
             if x['flow'] == 'provider':
                  res += "#include <%s.h>\n" % ( x['impl'])
+            else:
+                res += "#include <%s_%sStub.h>\n" % ( x['module_name'], x['name'])
     return res
 
 #

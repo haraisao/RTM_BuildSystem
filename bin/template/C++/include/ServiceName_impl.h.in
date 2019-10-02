@@ -30,7 +30,7 @@ class @service_impl@
    // attributes and operations
 @operations@
 
-private:
+ private:
   // private variables
 //---< private_decls
 //--->
