@@ -92,6 +92,8 @@ macro(add_rtc_executable)
 endmacro(add_rtc_executable)
 
 macro(gen_setup_bat)
+ set (CMAKE_BIN_PATH $ENV{CMAKE_BIN_PATH})
+ set (PYTHON_DIR $ENV{PYTHON_DIR})
  configure_file(${OPENRTM_DIR}/../cmake/setup.bat.in ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/setup.bat @ONLY)
  install(FILES ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/setup.bat DESTINATION bin)
 endmacro(gen_setup_bat)
