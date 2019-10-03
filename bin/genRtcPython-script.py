@@ -93,24 +93,43 @@ def is_defined(attr, data):
     return ((attr in data) and data[attr])
 
 #
+#
+def genFile(yaml_data, tmpl_dir, tmpl_name, out_dir, out_name, enc="", comment_sym="\#"):
+    data=loadTemplate(tmpl_name, tmpl_dir)
+    data=replaceAllKeys(data, yaml_data, "in "+tmpl_name)
+    org_content = getFileContent(os.path.join(out_dir, tmpl_dir, out_name))
+    org_code=getOwnCodeArea(org_content, comment_sym)
+    for key in org_code:
+        area=getCodeArea(data, key, 0, comment_sym )
+        if area:
+            data=data[:area[0]] + org_code[key][1] + data[area[1]:]
+
+    if rename_old_file(os.path.join(out_dir, tmpl_dir), out_name , data):
+        if enc:
+            writeFile(data, out_name, os.path.join(out_dir, tmpl_dir), enc )
+        else:
+            writeFile(data, out_name, os.path.join(out_dir, tmpl_dir) )
+
+#
 #  CMakeLists.txt
 def genCMakeLists(yaml_data, dirname="", dist=""):
-    data=loadTemplate("CMakeLists.txt", dirname)
-    data=replaceAllKeys(data, yaml_data, "in CMakeLists.txt("+dirname+")")
+    yaml_data['service_impl_h'] = ""
+    yaml_data['service_impl_cpp'] = ""
+    yaml_data['service_idl'] = ""
+    if is_defined('serviceport', yaml_data):
+        for sdata in yaml_data['serviceport']:
+            if 'impl' in sdata:
+                yaml_data['service_impl_h'] += "  include/"+sdata['impl']+".h\n"
+                yaml_data['service_impl_cpp'] += "  src/"+sdata['impl']+".cpp\n"
+            yaml_data['service_idl']="idl/%s_%s.idl\n" % (sdata['module_name'],  sdata['name'])
 
-    if rename_old_file(os.path.join(dist, dirname), "CMakeLists.txt" , data):
-        writeFile(data, "CMakeLists.txt", os.path.join(dist, dirname))
+    genFile(yaml_data, dirname, "CMakeLists.txt", dist, "CMakeLists.txt", comment_sym="\#")
 
 #
 # XXX.py 
 def genPythonFile(yaml_data, dist=""):
     outfname=yaml_data['ProjectName']+".py"
-
-    data=loadTemplate("ProjectName.py", "scripts")
-    data=replaceAllKeys(data, yaml_data, "in ProjectName.py")
-
-    if rename_old_file(os.path.join(dist, "scripts"), outfname , data): 
-        writeFile(data, outfname, os.path.join(dist, "scripts") )
+    genFile(yaml_data, "scripts", "ProjectName.py", dist, outfname, enc="", comment_sym="\#")
 
 #
 # XXX.idl 
@@ -145,11 +164,12 @@ def genIDLFile(yaml_data, dist=""):
                 
                 service_data['description'] = sdata['description']
 
-                data=loadTemplate("Service_module.idl", "idl")
-                data=replaceAllKeys(data, service_data, "in Service_module.idl")
-
-                if rename_old_file(os.path.join(dist, "idl"), outfname , data):
-                    writeFile(data, outfname, os.path.join(dist, "idl") )
+                genFile(service_data, "idl", "Service_module.idl", dist, outfname, enc="", comment_sym="\/\/")
+                #data=loadTemplate("Service_module.idl", "idl")
+                #data=replaceAllKeys(data, service_data, "in Service_module.idl")
+                #
+                #if rename_old_file(os.path.join(dist, "idl"), outfname , data):
+                #    writeFile(data, outfname, os.path.join(dist, "idl") )
 
 #
 # XXX_impl.py 
@@ -199,16 +219,18 @@ def genServiceImplFile(yaml_data, dist=""):
                             funcs += "  #\n  # %s\n" % op
                             funcs += "  def "+val[1]+"(self):\n"
                         funcs += "    try:\n"
+                        funcs += "#---< %s\n#--->\n" % val[1]
                         funcs += "      return "+resval+"\n"
                         funcs += "    except AttributeError:\n      raise CORBA.NO_IMPLEMENT(0, CORBA.COMPLETED_NO)\n\n"
                     service_data['service_function'] = funcs
                 else:
                     service_data['service_function'] = ""
 
-                data=loadTemplate("Service_module.py", "scripts")
-                data=replaceAllKeys(data, service_data, "in Service_module.py")
-                if rename_old_file(os.path.join(dist, "scripts"), outfname , data):
-                    writeFile(data, outfname, os.path.join(dist, "scripts") )
+                genFile(service_data, "scripts", "Service_module.py", dist, outfname, enc="", comment_sym="\#")
+                #data=loadTemplate("Service_module.py", "scripts")
+                #data=replaceAllKeys(data, service_data, "in Service_module.py")
+                #if rename_old_file(os.path.join(dist, "scripts"), outfname , data):
+                #    writeFile(data, outfname, os.path.join(dist, "scripts") )
 
 #
 #  Replace Keys (@xxx@)
@@ -244,26 +266,76 @@ def getActionsDefine(data):
                 elif x[xx] :
                     if xx == 'OnFinalize':
                         val += "  #####\n  #   on%s\n  #\n" % (xx[2:])
-                        val += "  def on%s(self):\n\n    return RTC.RTC_OK\n\n" % (xx[2:])
+                        val += "  def on%s(self):\n#---< %s\n#--->\n    return RTC.RTC_OK\n\n" % (xx[2:], xx)
                     else:
                         val += "  #####\n  #   on%s\n  #\n" % (xx[2:])
-                        val += "  def on%s(self, ec_id):\n\n    return RTC.RTC_OK\n\n" % (xx[2:])
+                        val += "  def on%s(self, ec_id):\n#---< %s\n#--->\n    return RTC.RTC_OK\n\n" % (xx[2:], xx)
                 else:
-                    if xx == 'OnFinalize':
-                        val += "  #####\n  #   on%s\n" % (xx[2:])
-                        val += "  #\n  #def on%s(self):\n  #\n  #  return RTC.RTC_OK\n\n" % (xx[2:])
-                    else:
-                        val += "  #####\n  #   on%s\n" % (xx[2:])
-                        val += "  #\n  #def on%s(self, ec_id):\n  #\n  #  return RTC.RTC_OK\n\n" % (xx[2:])
+                    pass
+                    #if xx == 'OnFinalize':
+                    #    val += "  #####\n  #   on%s\n" % (xx[2:])
+                    #    val += "  #\n  #def on%s(self):\n  #\n  #  return RTC.RTC_OK\n\n" % (xx[2:])
+                    #else:
+                    #    val += "  #####\n  #   on%s\n" % (xx[2:])
+                    #    val += "  #\n  #def on%s(self, ec_id):\n  #\n  #  return RTC.RTC_OK\n\n" % (xx[2:])
 
     if is_defined('dataport', data) :
         for port in data['dataport']:
             if 'datalistener' in port:
                 val += "  #####\n  #   onData\n  #\n"
-                val += "  def onData(self, name, data):\n    print(name, data)\n\n"
+                val += "  def onData(self, name, data):\n    print(name, data)\n#---< OnData\n#--->\n\n"
                 val += "    return RTC.RTC_OK\n\n"
                 break
     return val
+
+def getFileContent(fname):
+    res=""
+    try:
+        with open(fname, "r", encoding="utf-8") as f:
+            res=f.read()
+    except:
+        pass
+    return res
+
+start_pattern=r"%s\-{3,}\<"
+end_pattern=r"%s\-{3,}\>"
+
+def getOwnCodeArea(content, comment_sym="\#"):
+    start = 0
+    mobj=1
+    res={}
+    start_mark=(start_pattern % comment_sym) +" [\w]+"
+    end_mark=(end_pattern % comment_sym)
+    while mobj:
+        mobj = re.search(start_mark, content[start:])
+        if mobj:
+            mobj_e = re.search(end_mark, content[start+mobj.end():])
+            if mobj_e:
+                spos=start+mobj.end()
+                epos=start+mobj.end()+mobj_e.start()
+                res[mobj[0][6:].strip()] = [[spos, epos], content[spos:epos]]
+                
+                start += mobj.end() + mobj_e.end()
+            else:
+                spos=start+mobj.end()
+                epos=-1
+                res[mobj[0][6:].strip()] = [[spos, -1], content[spos:]]
+                mobj = False
+    return res
+
+def getCodeArea(content, key, start=0, comment_sym="\#"):
+    start_mark=(start_pattern % comment_sym) + (" %s" % key)
+    end_mark=(end_pattern % comment_sym)
+    mobj = re.search(start_mark, content[start:])
+    if mobj:
+        mobj_e = re.search(end_mark, content[start+mobj.end():])
+        spos=start+mobj.end()
+        if mobj_e:
+            epos=start+mobj.end()+mobj_e.start()
+            return [spos, epos]        
+        else:
+            None
+    return None
 
 #
 # generate C++ files

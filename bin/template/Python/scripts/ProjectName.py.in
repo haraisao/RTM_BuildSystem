@@ -11,6 +11,9 @@
 """
 from DataFlowRTC_Base import *
 
+#---< local_def
+#--->
+
 ##
 # @class ProjectName
 # 
@@ -22,6 +25,8 @@ class @ProjectName@(DataFlowRTC_Base):
   # 
   def __init__(self, manager):
     DataFlowRTC_Base.__init__(self, manager)
+#---< init
+#--->
 
   ##
   #
@@ -33,10 +38,14 @@ class @ProjectName@(DataFlowRTC_Base):
   #
   def onInitialize(self):
     DataFlowRTC_Base.onInitialize(self)
-    
+#---< OnInitialize
+#--->
     return RTC.RTC_OK
 
 @action_define@
+
+#---< local_def2
+#--->
 
 
 #########################################

@@ -24,11 +24,16 @@ import @service_name@, @service_name@__POA
 import OpenRTM_aist
 import RTC
 
+#----< local_def
+#---->
+
 #
 # @service_name@.idl
 #
 class @service_impl@ (@service_name@__POA.@interface_name@):
   def __init__(self):
     self._rtc=None
+#----< init
+#---->
 
 @service_function@
