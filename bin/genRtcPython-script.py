@@ -343,7 +343,7 @@ def getCodeArea(content, key, start=0, comment_sym="\#"):
 #
 # generate C++ files
 def genPythonFiles(data, yaml_file, dist=""):
-    genCMakeLists(data, "", dist)
+    #genCMakeLists(data, "", dist)
     genPythonFile(data, dist)
     genIDLFile(data, dist)
     genServiceImplFile(data, dist)
