@@ -24,7 +24,12 @@ for %%a in (%*) do (
         set PKG_NAME=%%a
     ) else (
         set OPTIONS=!OPTIONS! %%a
+        echo !OPTIONS!
+    ) else (
+        set OPTIONS=!OPTIONS! %%a
+        echo !OPTIONS!
     )
+
   )
 )
 
