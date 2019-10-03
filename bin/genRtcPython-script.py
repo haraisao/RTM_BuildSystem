@@ -21,7 +21,10 @@ def read_rtc_yaml(fname="RTC"):
 
     try:
         f=open(fname, "r", encoding="utf-8")
-        data=yaml.load(f)
+        try:
+            data=yaml.load(f, Loade=yaml.FullLoader)
+        except:
+            data=yaml.load(f)
         f.close()
         data['ProjectName'] = data['name']
         return data
