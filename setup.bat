@@ -37,24 +37,25 @@ if "%CMAKE_EXE%" == "" (
 @set OMNIORB_BIN_PATH=%OMNIORB_DIR%\bin\x86_win32;%OMNIORB_LIB_PATH%
 
 @rem --Python Bin
-set PYTHON_EXE=
-set PYTHON_DIR=
+
 call :SEARCH_PYTHON python.exe
 
-if "%PYTHON_EXE%" == "" (
+if "%PYTHON_EXE_%" == "" (
     @echo Fail to find python.exe
 ) else (
+    set PYTHON_EXE=%PYTHON_EXE_%
+    set PYTHON_DIR=%PYTHON_DIR_%
     @set PYTHON_BIN_PATH=%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%PYTHON_DIR%\DLLs
     @set PYTHONPATH=%OMNIORB_ROOT%\lib\python;%PYTHON_DIR%\Lib;%PYTHONPATH%
 )
 
-echo %PYTHON_BIN_PATH%
-    @set "PATH_ORG=%PATH%"
-    @set "PATH=%RTM_ROOT%\bin;%RTM_ROOT%\bin\%RTM_VC_VERSION%;%OMNIORB_BIN_PATH%;%PYTHON_BIN_PATH%;%CMAKE_BIN_PATH%;%PATH%"
+@set "PATH_ORG=%PATH%"
+@set "PATH=%RTM_ROOT%\bin;%RTM_ROOT%\bin\%RTM_VC_VERSION%;%OMNIORB_BIN_PATH%;%PYTHON_BIN_PATH%;%CMAKE_BIN_PATH%;%PATH%"
 
 
-echo on
+@echo on
+
 :SEARCH_PYTHON
  @set PYTHON_SEARCH=%~d0\Python37;%ProgramFiles%\Python37;%LOCALAPPDATA%\Programs\Python\Python37;%~d0\local\Python37
- @set PYTHON_EXE=%~$PYTHON_SEARCH:1
- @set PYTHON_DIR=%PYTHON_EXE:\python.exe=%
+ @set PYTHON_EXE_=%~$PYTHON_SEARCH:1
+ @set PYTHON_DIR_=%PYTHON_EXE:\python.exe=%
