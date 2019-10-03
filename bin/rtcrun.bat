@@ -30,6 +30,8 @@ cd /d %PKG_PATH%
 
 if exist %PKG_PATH%\setup.bat (
     call %PKG_PATH%\setup.bat
+) else (
+    call %RTM_ROOT:/=\%\..\setup.bat
 )
 
 if exist %RTC_NAME%.bat (
