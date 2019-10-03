@@ -6,6 +6,7 @@ set BUILD_TYPE=Release
 set OPTIONS=
 set ARCH=
 set RUN_BUILD=
+set INSTALL_PREFIX=
 
 for %%a in (%*) do (
   set ARG=%%a
@@ -19,6 +20,8 @@ for %%a in (%*) do (
     set RUN_BUILD=nobuild
   ) else  if "!ARG:~0,6!" == "--rtm_" (
     set RTM_VERSION=!ARG:~6,9!
+  ) else  if "!ARG:~1,25!" == "-DCMAKE_INSTALL_PREFIX=" (
+      set INSTALL_PREFIX=!ARG!
   ) else   (
     if "!PKG_NAME!" == "" if exist !ARG!/ (
         set PKG_NAME=%%a
@@ -31,6 +34,10 @@ for %%a in (%*) do (
     )
 
   )
+)
+
+if not "%RTM_PKG_PATH%" == "" if "%INSTALL_PREFIX%"  == "" (
+    set INSTALL_PREFIX="-DCMAKE_INSTALL_PREFIX=%RTM_PKG_PATH%""
 )
 
 if "%RTM_VERSION%" == "" (
@@ -80,7 +87,7 @@ if "%PKG_NAME%" == "" (
   goto :ERROR_EXIT
 )
 
-cmake -G %BUILD_TARGET% -B _build/%PKG_NAME% -S %PKG_NAME% -DCMAKE_BUILD_TYPE=%BUILD_TYPE% -DOPENRTM_VERSION=%RTM_VERSION% %OPTIONS%
+cmake -G %BUILD_TARGET% -B _build/%PKG_NAME% -S %PKG_NAME% -DCMAKE_BUILD_TYPE=%BUILD_TYPE% -DOPENRTM_VERSION=%RTM_VERSION% %INSTALL_PREFIX% %OPTIONS%
 
 if %ERRORLEVEL% neq 0 (
     echo "ERROR"
