@@ -32,8 +32,9 @@ add_idl_files(
 #  idl/BasicDataType.idl
 #  idl/ExtendedDataTypes.idl
 @service_idl@
+#---< idl_files
+#--->
 )
-#
 #  compile IDL file
 compile_idl_files()
 
@@ -42,11 +43,15 @@ compile_idl_files()
 set(rtc_headers
 @service_impl_h@
   include/@ProjectName@.h
+#---< header_files
+#--->
 )
 
 set(rtc_srcs
 @service_impl_cpp@
   src/@ProjectName@.cpp
+#---< src_files
+#--->
 )
 
 set(rtc_exec_src src/@ProjectName@Comp.cpp)
@@ -65,6 +70,8 @@ link_directories(${OPENRTM_LIBRARY_DIRS})
 #find_package(libsndfile REQUIRED)
 #include_directories(${SNDFILE_INCLUDE_DIR})
 #set(OPTION_LIBRARIES ${SNDFILE_LIBRARIES})
+#---< third_party
+#--->
 set(OPTION_LIBRARIES)
 
 #############
@@ -95,10 +102,6 @@ install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}Comp
 gen_setup_bat()
 install(FILES ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/setup.bat DESTINATION ${PROJECT_NAME})
 
-#---< Comment
-
-#--->
-
 #
 #  install 3rdpary runtime libraries
 #install(FILES ${SNDFILE_RUNTIME} DESTINATION bin)
@@ -108,5 +111,3 @@ install(FILES ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/setup.bat DESTINATION ${PR
 # Package creation
 # By default, do not warn when built on machines using only VS Express:
 #CreatePackageCPack()
-
-
