@@ -18,6 +18,7 @@ set CMAKE_EXE=
 where /Q /R %~d0\local cmake.exe
 if %errorlevel%  == 0 (
   for /f  "usebackq" %%I in  (`where /R %~d0\local cmake.exe`) do set "CMAKE_EXE=%%I"
+  @set "CMAKE_DIR=%CMAKE_EXE:\cmake.exe=%"
 ) else (
   call :SEARCH_CMAKE cmake.exe
 )
