@@ -45,7 +45,8 @@
 //--->
 
 using namespace RTC;
-
+//---< Optional_decls
+//--->
 /*!
  * @class @ProjectName@
  * @brief Periodic Console Out Component

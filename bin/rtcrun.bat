@@ -1,10 +1,10 @@
 @echo off
 @setlocal
 
-set SEARCH_PATH=%RTM_ROOT:/=\%\Components
+set SEARCH_PATH="%RTM_ROOT:/=\%\Components";
 
 if not "%RTM_PKG_PATH%" == "" (
-    set SEARCH_PATH="%RTM_PKG_PATH%";"%SEARCH_PATH%";
+    set SEARCH_PATH="%RTM_PKG_PATH%";%SEARCH_PATH%
 )
 
 set PKG_NAME=%1
@@ -14,6 +14,7 @@ set OPTIONS=%3 %4 %5 %6 %7 %8 %9
 if "%PKG_NAME%" == "" (
     rem dir "%RTM_ROOT:/=\%\Components"
     for /f "delims=;" %%i in (%SEARCH_PATH%) do (
+        echo %%i
        dir /w "%%i"
     )
     goto END

@@ -100,7 +100,7 @@ install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}Comp
   )
 
 gen_setup_bat()
-install(FILES ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/setup.bat DESTINATION ${PROJECT_NAME})
+#install(FILES ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/setup.bat DESTINATION ${PROJECT_NAME})
 
 #
 #  install 3rdpary runtime libraries
