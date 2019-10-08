@@ -585,7 +585,9 @@ public:
                                  %s& data){
     if ( m_name == "ON_BUFFER_WRITE" ) {
      /* onBufferWrite */
+     //---< Datalistener_onBufferWrite
      m_obj->onBufferWrite(data);
+     //--->
     }
     return NO_CHANGE;
   };
