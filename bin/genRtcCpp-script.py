@@ -585,6 +585,7 @@ public:
                                  %s& data){
     if ( m_name == "ON_BUFFER_WRITE" ) {
      /* onBufferWrite */
+     m_obj->onBufferWrite(data);
     }
     return NO_CHANGE;
   };
@@ -623,6 +624,10 @@ def getActionsDecl(data):
                     #    val += "   /* virtual RTC::ReturnCode_t on%s(); */\n\n" % xx[2:]
                     #else:
                     #    val += "   /* virtual RTC::ReturnCode_t on%s(RTC::UniqueId ec_id); */\n\n" % xx[2:]
+    if is_defined('dataport', data) :
+        for port in data['dataport']:
+            if 'datalistener' in port:
+                val += "   virtual RTC::ReturnCode_t onBufferWrite(%s data);\n\n" %  port['type']
     return val
 
 #
@@ -646,6 +651,12 @@ def getActionsDefine(data):
                     #    val += "/*\nRTC::ReturnCode_t %s::on%s()\n{\n\n  return RTC::RTC_OK;\n}\n*/\n\n" % (project_name, xx[2:])
                     #else:
                     #    val += "/*\nRTC::ReturnCode_t %s::on%s(RTC::UniqueId ec_id)\n{\n\n  return RTC::RTC_OK;\n}\n*/\n\n" % (project_name, xx[2:])
+    if is_defined('dataport', data) :
+        for port in data['dataport']:
+            if 'datalistener' in port:
+                val += "RTC::ReturnCode_t %s::onBufferWrite(%s data)\n{\n//---< onBufferWrite\n\n//--->\n  return RTC::RTC_OK;\n}\n\n" % (project_name, port['type'])
+                break
+
     return val
 
 def getFileContent(fname):
