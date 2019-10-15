@@ -374,15 +374,16 @@ def mk_rtc_spec(spec_dict):
   res.append("lang_type")
   res.append("SCRIPT")
   
-  param=spec_dict['configuration']
-  param_keys=['default', '__type__', '__widget__', '__constraints__', '__description__']
-  if param :
-    for p in param:
-      name=p['name']
-      for x in param_keys:
-        if p.has_key(x):  
-          res.append('conf.'+x+'.'+name)
-          res.append(str(p[x]))
+  if 'configuration' in spec_dict:
+    param=spec_dict['configuration']
+    param_keys=['default', '__type__', '__widget__', '__constraints__', '__description__']
+    if param :
+      for p in param:
+        name=p['name']
+        for x in param_keys:
+          if p.has_key(x):  
+            res.append('conf.'+x+'.'+name)
+            res.append(str(p[x]))
   return res
 
 #
