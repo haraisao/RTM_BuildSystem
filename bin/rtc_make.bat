@@ -95,7 +95,7 @@ if %ERRORLEVEL% neq 0 (
 )
 
 if "%RUN_BUILD%" == "" (
-  cmake --build _build/%PKG_NAME% --config %BUILD_TYPE% %TARGET%
+  cmake --build _build/%PKG_NAME% --config %BUILD_TYPE% %TARGET% -- -fileLoggger
 )
 
 @endlocal

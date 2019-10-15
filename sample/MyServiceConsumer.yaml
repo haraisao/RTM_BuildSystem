@@ -12,24 +12,9 @@ description : Service port sample
 maintainer: Isao Hara
 author: Isao Hara(isao-hara@aist.go.jp)
 
-
 actions:
   - OnInitialize: true
-  - OnFinalize: true
-  - OnStartup: false
-  - OnShutdown: false
-  - OnActivated: true
-  - OnDeactivated: true
-  - OnAborting: false
-  - OnError: false
-  - OnReset: false
   - OnExecute: true
-  - OnStateUpdate: false
-  - OnRateChanged: false
-  - OnAction: false
-  - OnModeChanged: false
-
-dataport :
 
 serviceport : 
   - name : MyService
@@ -47,6 +32,4 @@ serviceport :
       - float get_value()
       - ValueList get_value_history()
     description : Simple Service Consumer
-    
-configuration : 
 
