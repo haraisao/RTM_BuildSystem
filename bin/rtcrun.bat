@@ -55,3 +55,4 @@ cd /d %CWD%
 @endlocal
 @echo on
 
+exit
