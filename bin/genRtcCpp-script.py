@@ -22,7 +22,7 @@ def read_rtc_yaml(fname="RTC"):
     try:
         f=open(fname, "r", encoding="utf-8")
         try:
-            data=yaml.load(f, Loade=yaml.FullLoader)
+            data=yaml.load(f, Loader=yaml.FullLoader)
         except:
             data=yaml.load(f)
         f.close()
