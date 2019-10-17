@@ -351,8 +351,10 @@ yaml.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, lambda load
 def load_rtc_data(fname='rtc.yaml'):
   #fname=os.path.join(os.path.dirname(__file__), fname)
   with open(fname, encoding="utf-8") as file:
-    data = yaml.load(file)
-
+    try:
+      data=yaml.load(file, Loader=yaml.FullLoader)
+    except:
+      data = yaml.load(file)
   return data
 
 #########################################
