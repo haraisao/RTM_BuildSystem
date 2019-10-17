@@ -2,7 +2,7 @@
 @echo off
 @setlocal
 
-call %~d0\local\OpenRTM-aist\setup.bat
+rem call %~d0\local\OpenRTM-aist\setup.bat
 rem if "%1" == "" (
 rem   echo Usage %0 [idl_file]
 rem   goto :end
