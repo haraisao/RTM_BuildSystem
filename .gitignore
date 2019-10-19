@@ -107,3 +107,4 @@ logback.xml
 
 sample/org
 sample/_build
+sample/*/
