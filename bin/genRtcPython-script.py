@@ -9,6 +9,7 @@ import shutil
 import traceback
 import time
 import difflib
+import pprint
 
 template_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'template')
 
@@ -242,6 +243,8 @@ def replaceAllKeys(data, yaml_data, info=""):
         try:
             if x == 'action_define':
                 data=data.replace('@'+x+'@', getActionsDefine(yaml_data))
+            elif x == 'rtc_data':
+                data=data.replace('@'+x+'@', pprint.pformat(yaml_data))
             else:
                 data=data.replace('@'+x+'@', str(yaml_data[x]))
         except:
@@ -341,7 +344,7 @@ def getCodeArea(content, key, start=0, comment_sym="\#"):
     return None
 
 #
-# generate C++ files
+# generate Python files
 def genPythonFiles(data, yaml_file, dist=""):
     #genCMakeLists(data, "", dist)
     genPythonFile(data, dist)
@@ -357,7 +360,7 @@ def genPythonFiles(data, yaml_file, dist=""):
         pass
     templ_scripts_dir = os.path.join(template_dir, "Python", "scripts")
     shutil.copy(os.path.join(templ_scripts_dir, "DataFlowRTC_Base.py"), target_scripts_dir)
-    shutil.copy(yaml_file, os.path.join(target_scripts_dir, project_name+".yaml"))
+    #shutil.copy(yaml_file, os.path.join(target_scripts_dir, project_name+".yaml"))
     shutil.copy(os.path.join(template_dir, "Python", "idlcompile.bat"), dist)
     shutil.copy(os.path.join(template_dir, "Python", "rtc.conf"), dist)
     shutil.copy(os.path.join(template_dir,"Python", "ProjectName.exe"), os.path.join(dist, project_name+".exe"))
@@ -380,5 +383,3 @@ if __name__ == '__main__':
     data=read_rtc_yaml(sys.argv[1])
     if data:
         genPythonFiles(data, sys.argv[1], dist_dir)
-
-

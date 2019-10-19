@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # -*- Python -*-
-
 """
  @license the MIT License
 
@@ -10,13 +9,11 @@
 
 """
 from DataFlowRTC_Base import *
-
 #---< local_def
 #--->
 
 ##
 # @class ProjectName
-# 
 # 
 class @ProjectName@(DataFlowRTC_Base):
   ##
@@ -27,7 +24,6 @@ class @ProjectName@(DataFlowRTC_Base):
     DataFlowRTC_Base.__init__(self, manager)
 #---< init
 #--->
-
   ##
   #
   # The initialize action (on CREATED->ALIVE transition)
@@ -35,27 +31,26 @@ class @ProjectName@(DataFlowRTC_Base):
   # 
   # @return RTC::ReturnCode_t
   # 
-  #
   def onInitialize(self):
     DataFlowRTC_Base.onInitialize(self)
 #---< OnInitialize
 #--->
     return RTC.RTC_OK
-
 @action_define@
-
 #---< local_def2
 #--->
-
+#########################################
+g_rtc_data=@rtc_data@
 
 #########################################
 #  Initializers
 #
-
 def main():
-  mgr = rtc_init(@ProjectName@,  os.path.join(os.path.dirname(__file__), '@ProjectName@.yaml'))
+  global g_rtc_data
+  mgr = rtc_init(@ProjectName@, 
+          #rtc_yaml=os.path.join(os.path.dirname(__file__), '@ProjectName@.yaml'),
+          rtc_data=g_rtc_data)
   mgr.runManager()
 
 if __name__ == "__main__":
   main()
-

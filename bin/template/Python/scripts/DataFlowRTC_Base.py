@@ -63,7 +63,6 @@ def input_with_timeout(prompt, timeout, timer=time.monotonic):
         time.sleep(0.04) # just to yield to other processes/threads
     raise TimeoutExpired
 
-
 def getGlobals():
     return globals()
 
@@ -107,7 +106,6 @@ class RtcDataListener(OpenRTM_aist.ConnectorDataListenerT):
 # 
 # 
 class DataFlowRTC_Base(OpenRTM_aist.DataFlowComponentBase):
-  
   ##
   # @brief constructor
   # @param manager Maneger Object
@@ -171,19 +169,16 @@ class DataFlowRTC_Base(OpenRTM_aist.DataFlowComponentBase):
         #self.__dict__['_'+k+'_service'] = OpenRTM_aist.CorbaConsumer(interfaceType=self._services[k]['if_type'])
         self.__dict__['_'+k+'_service'] = OpenRTM_aist.CorbaConsumer(interfaceType=eval(if_type, globals()))
 
-
     # initialize of configuration-data.
     for x in init_params(self._params):
       self.__dict__['_'+x[0]] = [x[1]]
 
   ##
-  #
   # The initialize action (on CREATED->ALIVE transition)
   # formaer rtc_init_entry() 
   # 
   # @return RTC::ReturnCode_t
   # 
-  #
   def onInitialize(self):
     # Bind variables and configuration variable
     for k in self._params.keys():
@@ -229,13 +224,11 @@ class DataFlowRTC_Base(OpenRTM_aist.DataFlowComponentBase):
         pass
 
     return RTC.RTC_OK
-  
   #
   #
   def onData(self, name, data):
 
     return RTC.RTC_OK
-
   #
   #
   def bindDataListener(self, portname, func=None):
@@ -260,7 +253,6 @@ class DataFlowRTC_Base(OpenRTM_aist.DataFlowComponentBase):
       return False
 
 #########################################
-#
 #  Funcrions
 #
 def init_params(param):
@@ -342,14 +334,12 @@ def instantiateDataType(dtype):
 def new_Time():
   tm=OpenRTM_aist.Time() 
   return RTC.Time(tm.sec,tm.usec)
-
 #
 #
 #
 yaml.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, lambda loader, node: OrderedDict(loader.construct_pairs(node)))
 
 def load_rtc_data(fname='rtc.yaml'):
-  #fname=os.path.join(os.path.dirname(__file__), fname)
   with open(fname, encoding="utf-8") as file:
     try:
       data=yaml.load(file, Loader=yaml.FullLoader)
@@ -418,10 +408,13 @@ def RtcModuleInit(manager):
 #
 #
 #
-def rtc_init(klass, rtc_yaml='rtc.yaml'):
+def rtc_init(klass, rtc_yaml='rtc.yaml', rtc_data=None):
   global _rtc_spec_dict_, _rtc_spec_, _rtc_class_, _rtc_name_, _rtc_dataports_, _rtc_serviceports_, _rtc_params_
 
-  _rtc_spec_dict_=load_rtc_data(fname=rtc_yaml)
+  if rtc_data:
+    _rtc_spec_dict_=rtc_data
+  else:
+    _rtc_spec_dict_=load_rtc_data(fname=rtc_yaml)
   _rtc_spec_=mk_rtc_spec(_rtc_spec_dict_)
   _rtc_class_=klass
   _rtc_name_=_rtc_spec_dict_['implementation_id']
