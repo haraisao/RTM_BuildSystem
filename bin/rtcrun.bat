@@ -51,8 +51,9 @@ if exist %RTC_NAME%.bat (
 
 cd /d %CWD%
 
+
+exit
+
 :END
 @endlocal
 @echo on
-
-exit
